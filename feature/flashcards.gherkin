@@ -1,1 +1,5 @@
+Feature: Flashcards
 
+  Scenario: Learner creates flashcards
+    When the Learner pass some text
+    Then the Learner receives flashcards from it
