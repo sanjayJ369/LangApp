@@ -1,0 +1,7 @@
+{
+    "editor.quickSuggestions": {
+        "strings": "on",
+    },
+    "cucumberautocomplete.strictGherkinCompletion": true,
+    "cucumberautocomplete.strictGherkinValidation": true
+}
