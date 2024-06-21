@@ -1,4 +1,4 @@
-package generated_test
+package feature_test
 
 import (
 	"testing"
