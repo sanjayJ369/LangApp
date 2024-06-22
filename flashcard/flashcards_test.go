@@ -1,7 +1,9 @@
-package feature_test
+package flashcard_test
 
 import (
 	"testing"
+
+	"github.com/sanjayJ369/LangApp/flashcard"
 )
 
 func TestFlashcards(t *testing.T) {
@@ -11,9 +13,12 @@ func TestFlashcards(t *testing.T) {
 		t.Parallel()
 
 		// When the Learner passes some text.
-
+		text := "this is some text"
+		got := flashcard.CreateFlashCards(text)
 		// Then the Learner receives flashcards from it.
-
+		if len(got) == 0 {
+			t.Error("received zero flashcards")
+		}
 	})
 
 	t.Run("Learner gets flashcards without duplicates", func(t *testing.T) {
