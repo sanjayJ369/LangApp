@@ -29,14 +29,13 @@ func TestFlashcards(t *testing.T) {
 		t.Parallel()
 
 		// When the Learner passes some text with repeated words.
-		// cards := flashcard.CreateFlashCards("some text text")
+		cards := flashcard.CreateFlashCards("some text text")
 
 		// Then the Learner receives flashcards without duplicates.
-		// cardMap := map[string]bool
+		require.Len(t, cards, 2)
 
-		// for _, card := range cards {
-		// 	cardMap[card]
-		// }
+		assert.Equal(t, "some", cards[0].Word)
+		assert.Equal(t, "text", cards[1].Word)
 	})
 
 	t.Run("Learner does not get new flashcards from the same text", func(t *testing.T) {
