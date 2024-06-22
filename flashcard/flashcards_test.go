@@ -15,40 +15,48 @@ func TestFlashcards(t *testing.T) {
 		t.Parallel()
 
 		// When the Learner passes some text.
-		cards := flashcard.CreateFlashCards("some text")
+		container := flashcard.CreateFlashCards("learner", "some text")
 
 		// Then the Learner receives flashcards from it.
-		require.Len(t, cards, 2)
+		require.Len(t, container.Cards, 2)
 
 		// And the flashcards contain words from the text.
-		assert.Equal(t, "some", cards[0].Word)
-		assert.Equal(t, "text", cards[1].Word)
+		assert.Equal(t, "some", container.Cards[0].Word)
+		assert.Equal(t, "text", container.Cards[1].Word)
 	})
 
 	t.Run("Learner gets flashcards without duplicates", func(t *testing.T) {
 		t.Parallel()
 
 		// When the Learner passes some text with repeated words.
-		cards := flashcard.CreateFlashCards("some text text")
+		container := flashcard.CreateFlashCards("learner","some text text")
 
 		// Then the Learner receives flashcards without duplicates.
-		require.Len(t, cards, 2)
+		require.Len(t, container.Cards, 2)
 
-		assert.Equal(t, "some", cards[0].Word)
-		assert.Equal(t, "text", cards[1].Word)
+		assert.Equal(t, "some", container.Cards[0].Word)
+		assert.Equal(t, "text", container.Cards[1].Word)
 	})
 
 	t.Run("Learner does not get new flashcards from the same text", func(t *testing.T) {
 		t.Parallel()
 
+		const (
+			learner = "learner"
+			someText = "some text text"
+		)
+
 		// When the Learner passes some text.
+		cards1 := flashcard.CreateFlashCards(learner , someText)
 
 		// Then the Learner receives flashcards from it.
+		require.NotEmpty(t, cards1)
 
 		// When the Learner passes the same text again.
+		cards2 := flashcard.CreateFlashCards(learner , someText)
 
 		// Then the Learner does not receive new flashcards.
-
+		assert.Empty(t, cards2)
 	})
 
 	t.Run("Learner can learn flashcards", func(t *testing.T) {
