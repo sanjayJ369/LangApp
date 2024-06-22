@@ -3,6 +3,7 @@ Feature: Flashcards
   Scenario: Learner creates flashcards
     When the Learner passes some text
     Then the Learner receives flashcards from it
+    And the flashcards contain words from the text
 
   Scenario: Learner gets flashcards without duplicates
     When the Learner passes some text with repeated words

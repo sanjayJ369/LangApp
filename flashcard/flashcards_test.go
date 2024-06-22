@@ -4,6 +4,8 @@ import (
 	"testing"
 
 	"github.com/sanjayJ369/LangApp/flashcard"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestFlashcards(t *testing.T) {
@@ -13,21 +15,28 @@ func TestFlashcards(t *testing.T) {
 		t.Parallel()
 
 		// When the Learner passes some text.
-		text := "this is some text"
-		got := flashcard.CreateFlashCards(text)
+		cards := flashcard.CreateFlashCards("some text")
+
 		// Then the Learner receives flashcards from it.
-		if len(got) == 0 {
-			t.Error("received zero flashcards")
-		}
+		require.Len(t, cards, 2)
+
+		// And the flashcards contain words from the text.
+		assert.Equal(t, "some", cards[0].Word)
+		assert.Equal(t, "text", cards[1].Word)
 	})
 
 	t.Run("Learner gets flashcards without duplicates", func(t *testing.T) {
 		t.Parallel()
 
 		// When the Learner passes some text with repeated words.
+		// cards := flashcard.CreateFlashCards("some text text")
 
 		// Then the Learner receives flashcards without duplicates.
+		// cardMap := map[string]bool
 
+		// for _, card := range cards {
+		// 	cardMap[card]
+		// }
 	})
 
 	t.Run("Learner does not get new flashcards from the same text", func(t *testing.T) {
