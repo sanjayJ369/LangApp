@@ -4,6 +4,7 @@ Feature: Flashcards
     When the Learner passes some text
     Then the Learner receives flashcards from it
     And the flashcards contain words from the text
+    And the Learner receives the flashcards they owns
 
   Scenario: Learner gets flashcards without duplicates
     When the Learner passes some text with repeated words

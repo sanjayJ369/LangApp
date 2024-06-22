@@ -4,7 +4,7 @@ import (
 	"strings"
 )
 
-var learnerCards = make(map[string]Flashcards)
+var learnerCards = make(map[string]*Flashcards)
 
 type Flashcards struct {
 	Learner string
@@ -18,9 +18,10 @@ type Flashcard struct {
 func CreateFlashCards(learner string, text string) Flashcards {
 	container, ok := learnerCards[learner]
 	if !ok {
-		learnerCards[learner] = Flashcards{
+		container = &Flashcards{
 			Learner: learner,
 		}
+		learnerCards[learner] = container
 	}
 
 	seen := make(map[string]bool)
@@ -41,5 +42,5 @@ func CreateFlashCards(learner string, text string) Flashcards {
 
 	learnerCards[learner] = container
 
-	return container
+	return *container
 }
