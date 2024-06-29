@@ -24,3 +24,20 @@ Feature: Flashcards
       | <guess> | <memorized> |
       | right   | yes         |
       | wrong   | no          |
+
+  Scenario: Multiple Learner can create flashcards
+    When Learner Bob passes some text
+    Then Bob receives his flashcards
+    When Learner Alex passes some text
+    Then Alex receives his flashcards
+    And Alex does not see Bobs flashcards
+    And Bob does not see Alexs flashcards
+
+  Scenario: Flashcards contain word along with it's meaning
+    When the Learner passes some text
+    Then they receive flashcards
+    And each flashcards has meaning of the word
+
+  Scenario: Learner can export flashcards to Anki
+    When the Learner creates flashcards
+    Then they can export them to Anki

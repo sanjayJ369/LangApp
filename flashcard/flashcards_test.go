@@ -91,4 +91,41 @@ func TestFlashcards(t *testing.T) {
 			})
 		}
 	})
+
+	t.Run("Multiple Learner can create flashcards", func(t *testing.T) {
+		t.Parallel()
+
+		// When Learner Bob passes some text.
+
+		// Then Bob receives his flashcards.
+
+		// When Learner Alex passes some text.
+
+		// Then Alex receives his flashcards.
+
+		// And Alex does not see Bobs flashcards.
+
+		// And Bob does not see Alexs flashcards.
+
+	})
+
+	t.Run("Flashcards contain word along with it's meaning", func(t *testing.T) {
+		t.Parallel()
+
+		// When the Learner passes some text.
+
+		// Then they receive flashcards.
+
+		// And each flashcards has meaning of the word.
+
+	})
+
+	t.Run("Learner can export flashcards to Anki", func(t *testing.T) {
+		t.Parallel()
+
+		// When the Learner creates flashcards.
+
+		// Then they can export them to Anki.
+
+	})
 }
