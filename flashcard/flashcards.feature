@@ -16,22 +16,11 @@ Feature: Flashcards
     When the Learner passes the same text again
     Then the Learner does not receive new flashcards
 
-  Scenario Outline: Learner can learn flashcards
-    When the Learner receives a flashcard
-    Then the Learner can <guess> the meaning of it
-    And the flashcard becomes <memorized>
-    Examples:
-      | <guess> | <memorized> |
-      | right   | yes         |
-      | wrong   | no          |
-
   Scenario: Multiple Learner can create flashcards
-    When Learner Bob passes some text
-    Then Bob receives his flashcards
-    When Learner Alex passes some text
-    Then Alex receives his flashcards
-    And Alex does not see Bobs flashcards
-    And Bob does not see Alexs flashcards
+    When Learner Sanjay creates flashcards
+    When Learner Dima creates flashcards
+    And Dima does not see Sanjay flashcards
+    And Sanjay does not see Dima flashcards
 
   Scenario: Flashcards contain word along with it's meaning
     When the Learner passes some text

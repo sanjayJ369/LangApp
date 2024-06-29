@@ -62,51 +62,20 @@ func TestFlashcards(t *testing.T) {
 		assert.Equal(t, cards1, cards2)
 	})
 
-	t.Run("Learner can learn flashcards", func(t *testing.T) {
-		t.Parallel()
-
-		type testCase struct {
-			Guess     string `field:"<guess>"`
-			Memorized string `field:"<memorized>"`
-		}
-
-		testCases := map[string]testCase{
-			"right_yes": {"right", "yes"},
-			"wrong_no":  {"wrong", "no"},
-		}
-
-		for name, testCase := range testCases {
-			testCase := testCase
-
-			t.Run(name, func(t *testing.T) {
-				t.Parallel()
-
-				_ = testCase // TODO: Use and remove.
-				// When the Learner receives a flashcard.
-
-				// Then the Learner can <guess> the meaning of it.
-
-				// And the flashcard becomes <memorized>.
-
-			})
-		}
-	})
-
 	t.Run("Multiple Learner can create flashcards", func(t *testing.T) {
 		t.Parallel()
 
-		// When Learner Bob passes some text.
+		// When Learner Sanjay creates flashcards.
+		sanjayFlashcards := flashcard.CreateFlashCards("sanjay", "sanjay")
 
-		// Then Bob receives his flashcards.
+		// When Learner Dima creates flashcards.
+		dimaFlashcards := flashcard.CreateFlashCards("dima", "dima")
 
-		// When Learner Alex passes some text.
+		// And Dima does not see Sanjay flashcards.
+		assert.NotContains(t, dimaFlashcards.Cards, flashcard.Flashcard{Word: "sanjay"})
 
-		// Then Alex receives his flashcards.
-
-		// And Alex does not see Bobs flashcards.
-
-		// And Bob does not see Alexs flashcards.
-
+		// And Sanjay does not see Dima flashcards.
+		assert.NotContains(t, sanjayFlashcards.Cards, flashcard.Flashcard{Word: "dima"})
 	})
 
 	t.Run("Flashcards contain word along with it's meaning", func(t *testing.T) {
