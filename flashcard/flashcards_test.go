@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/sanjayJ369/LangApp/flashcard"
+	"github.com/sanjayJ369/LangApp/learner"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -14,8 +15,10 @@ func TestFlashcards(t *testing.T) {
 	t.Run("Learner creates flashcards", func(t *testing.T) {
 		t.Parallel()
 
+		l := learner.New()
+
 		// When the Learner passes some text.
-		container := flashcard.CreateFlashCards("learner", "some text")
+		container := flashcard.CreateFlashCards(l, "learner", "some text")
 
 		// Then the Learner receives flashcards from it.
 		require.Len(t, container.Cards, 2)
@@ -31,8 +34,10 @@ func TestFlashcards(t *testing.T) {
 	t.Run("Learner gets flashcards without duplicates", func(t *testing.T) {
 		t.Parallel()
 
+		l := learner.New()
+
 		// When the Learner passes some text with repeated words.
-		container := flashcard.CreateFlashCards("learner", "some text text")
+		container := flashcard.CreateFlashCards(l, "learner", "some text text")
 
 		// Then the Learner receives flashcards without duplicates.
 		require.Len(t, container.Cards, 2)
@@ -45,18 +50,20 @@ func TestFlashcards(t *testing.T) {
 		t.Parallel()
 
 		const (
-			learner  = "learner"
-			someText = "some text text"
+			learnerID = "learner"
+			someText  = "some text text"
 		)
 
+		l := learner.New()
+
 		// When the Learner passes some text.
-		cards1 := flashcard.CreateFlashCards(learner, someText)
+		cards1 := flashcard.CreateFlashCards(l, learnerID, someText)
 
 		// Then the Learner receives flashcards from it.
 		require.NotEmpty(t, cards1)
 
 		// When the Learner passes the same text again.
-		cards2 := flashcard.CreateFlashCards(learner, someText)
+		cards2 := flashcard.CreateFlashCards(l, learnerID, someText)
 
 		// Then the Learner does not receive new flashcards.
 		assert.Equal(t, cards1, cards2)
@@ -65,11 +72,13 @@ func TestFlashcards(t *testing.T) {
 	t.Run("Multiple Learner can create flashcards", func(t *testing.T) {
 		t.Parallel()
 
+		l := learner.New()
+
 		// When Learner Sanjay creates flashcards.
-		sanjayFlashcards := flashcard.CreateFlashCards("sanjay", "sanjay")
+		sanjayFlashcards := flashcard.CreateFlashCards(l, "Sanjay", "sanjay")
 
 		// When Learner Dima creates flashcards.
-		dimaFlashcards := flashcard.CreateFlashCards("dima", "dima")
+		dimaFlashcards := flashcard.CreateFlashCards(l, "Dima", "dima")
 
 		// And Dima does not see Sanjay flashcards.
 		assert.NotContains(t, dimaFlashcards.Cards, flashcard.Flashcard{Word: "sanjay"})

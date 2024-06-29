@@ -4,8 +4,6 @@ import (
 	"strings"
 )
 
-var learnerCards = make(map[string]*Flashcards)
-
 type Flashcards struct {
 	Learner string
 	Cards   []Flashcard
@@ -15,17 +13,22 @@ type Flashcard struct {
 	Word string
 }
 
-func CreateFlashCards(learner string, text string) Flashcards {
-	container, ok := learnerCards[learner]
-	if !ok {
-		container = &Flashcards{
-			Learner: learner,
+type Learner interface {
+	Flashcards(learnerID string) *Flashcards
+	AddFlashcards(learnerID string, flashcards *Flashcards)
+}
+
+func CreateFlashCards(learner Learner, learnerID string, text string) Flashcards {
+	flashcards := learner.Flashcards(learnerID)
+	if flashcards == nil {
+		flashcards = &Flashcards{
+			Learner: learnerID,
 		}
-		learnerCards[learner] = container
+		learner.AddFlashcards(learnerID, flashcards)
 	}
 
 	seen := make(map[string]bool)
-	for _, card := range container.Cards {
+	for _, card := range flashcards.Cards {
 		seen[card.Word] = true
 	}
 
@@ -33,14 +36,12 @@ func CreateFlashCards(learner string, text string) Flashcards {
 
 	for _, word := range words {
 		if !seen[word] {
-			container.Cards = append(container.Cards, Flashcard{
+			flashcards.Cards = append(flashcards.Cards, Flashcard{
 				Word: word,
 			})
 			seen[word] = true
 		}
 	}
 
-	learnerCards[learner] = container
-
-	return *container
+	return *flashcards
 }

@@ -3,5 +3,8 @@
         "strings": "on",
     },
     "cucumberautocomplete.strictGherkinCompletion": true,
-    "cucumberautocomplete.strictGherkinValidation": true
+    "cucumberautocomplete.strictGherkinValidation": true,
+    "go.testFlags": [
+        "-race"
+    ]
 }
