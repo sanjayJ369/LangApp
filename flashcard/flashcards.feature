@@ -27,6 +27,6 @@ Feature: Flashcards
     Then they receive flashcards
     And each flashcards has meaning of the word
 
-  Scenario: Learner can export flashcards to Anki
+  Scenario: Learner can export flashcards
     When the Learner creates flashcards
-    Then they can export them to Anki
+    Then they can export them

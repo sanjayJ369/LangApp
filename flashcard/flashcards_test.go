@@ -3,8 +3,10 @@ package flashcard_test
 import (
 	"testing"
 
+	"github.com/sanjayJ369/LangApp/exporter"
 	"github.com/sanjayJ369/LangApp/flashcard"
 	"github.com/sanjayJ369/LangApp/learner"
+	"github.com/sanjayJ369/LangApp/meaning"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -14,11 +16,9 @@ func TestFlashcards(t *testing.T) {
 
 	t.Run("Learner creates flashcards", func(t *testing.T) {
 		t.Parallel()
-
-		l := learner.New()
-
+		f, _ := flashcard.New(validSettings())
 		// When the Learner passes some text.
-		container := flashcard.CreateFlashCards(l, "learner", "some text")
+		container := f.CreateFlashCards("learner", "some text")
 
 		// Then the Learner receives flashcards from it.
 		require.Len(t, container.Cards, 2)
@@ -33,11 +33,9 @@ func TestFlashcards(t *testing.T) {
 
 	t.Run("Learner gets flashcards without duplicates", func(t *testing.T) {
 		t.Parallel()
-
-		l := learner.New()
-
+		f, _ := flashcard.New(validSettings())
 		// When the Learner passes some text with repeated words.
-		container := flashcard.CreateFlashCards(l, "learner", "some text text")
+		container := f.CreateFlashCards("learner", "some text text")
 
 		// Then the Learner receives flashcards without duplicates.
 		require.Len(t, container.Cards, 2)
@@ -48,22 +46,20 @@ func TestFlashcards(t *testing.T) {
 
 	t.Run("Learner does not get new flashcards from the same text", func(t *testing.T) {
 		t.Parallel()
-
+		f, _ := flashcard.New(validSettings())
 		const (
 			learnerID = "learner"
 			someText  = "some text text"
 		)
 
-		l := learner.New()
-
 		// When the Learner passes some text.
-		cards1 := flashcard.CreateFlashCards(l, learnerID, someText)
+		cards1 := f.CreateFlashCards(learnerID, someText)
 
 		// Then the Learner receives flashcards from it.
 		require.NotEmpty(t, cards1)
 
 		// When the Learner passes the same text again.
-		cards2 := flashcard.CreateFlashCards(l, learnerID, someText)
+		cards2 := f.CreateFlashCards(learnerID, someText)
 
 		// Then the Learner does not receive new flashcards.
 		assert.Equal(t, cards1, cards2)
@@ -71,39 +67,51 @@ func TestFlashcards(t *testing.T) {
 
 	t.Run("Multiple Learner can create flashcards", func(t *testing.T) {
 		t.Parallel()
-
-		l := learner.New()
-
+		f, _ := flashcard.New(validSettings())
 		// When Learner Sanjay creates flashcards.
-		sanjayFlashcards := flashcard.CreateFlashCards(l, "Sanjay", "sanjay")
+		sanjayFlashcards := f.CreateFlashCards("Sanjay", "sanjay")
 
 		// When Learner Dima creates flashcards.
-		dimaFlashcards := flashcard.CreateFlashCards(l, "Dima", "dima")
+		dimaFlashcards := f.CreateFlashCards("Dima", "dima")
 
 		// And Dima does not see Sanjay flashcards.
-		assert.NotContains(t, dimaFlashcards.Cards, flashcard.Flashcard{Word: "sanjay"})
+		assert.NotContains(t, dimaFlashcards.Cards, flashcard.Card{Word: "sanjay"})
 
 		// And Sanjay does not see Dima flashcards.
-		assert.NotContains(t, sanjayFlashcards.Cards, flashcard.Flashcard{Word: "dima"})
+		assert.NotContains(t, sanjayFlashcards.Cards, flashcard.Card{Word: "dima"})
 	})
 
 	t.Run("Flashcards contain word along with it's meaning", func(t *testing.T) {
 		t.Parallel()
-
+		f, _ := flashcard.New(validSettings())
 		// When the Learner passes some text.
+		learnerFlashcards := f.CreateFlashCards("Learner", "test sentence")
 
 		// Then they receive flashcards.
+		assert.NotEmpty(t, learnerFlashcards.Cards)
 
 		// And each flashcards has meaning of the word.
-
+		for _, card := range learnerFlashcards.Cards {
+			assert.NotEmpty(t, card.Meaning, card.Word+": is empty")
+		}
 	})
 
-	t.Run("Learner can export flashcards to Anki", func(t *testing.T) {
+	t.Run("Learner can export flashcards", func(t *testing.T) {
 		t.Parallel()
+		f, _ := flashcard.New(validSettings())
 
 		// When the Learner creates flashcards.
-
-		// Then they can export them to Anki.
-
+		f.CreateFlashCards("Learner", "test sentence")
+		// Then they can export them.
+		assert.NotEmpty(t, f.Export("Learner"))
 	})
+
+}
+
+func validSettings() flashcard.Settings {
+	return flashcard.Settings{
+		Learner:  learner.New(),
+		Meaning:  meaning.New(),
+		Exporter: exporter.New(),
+	}
 }
