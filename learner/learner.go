@@ -1,20 +1,36 @@
 // This is a naive data source inplementation for the Learner object.
 package learner
 
-import "github.com/sanjayJ369/LangApp/flashcard"
+import (
+	"encoding/json"
+	"os"
 
-type Learner map[string]*flashcard.Responce
+	"github.com/sanjayJ369/LangApp/flashcard"
+)
 
-func New() Learner {
-	var l Learner = make(map[string]*flashcard.Responce)
+type Learner struct {
+	loc  string
+	data map[string]*flashcard.Responce
+}
 
+func New(loc string) Learner {
+	file, _ := os.Open(loc)
+	var l Learner = Learner{
+		loc:  loc,
+		data: make(map[string]*flashcard.Responce),
+	}
+	if file != nil {
+		json.NewDecoder(file).Decode(&l.data)
+	}
 	return l
 }
 
 func (l Learner) Flashcards(learnerID string) *flashcard.Responce {
-	return l[learnerID]
+	return l.data[learnerID]
 }
 
 func (l Learner) AddFlashcards(learnerID string, flashcards *flashcard.Responce) {
-	l[learnerID] = flashcards
+	l.data[learnerID] = flashcards
+	data, _ := json.Marshal(l.data)
+	os.WriteFile(l.loc, data, 0666)
 }

@@ -7,6 +7,7 @@ import (
 	"github.com/sanjayJ369/LangApp/flashcard"
 	"github.com/sanjayJ369/LangApp/learner"
 	"github.com/sanjayJ369/LangApp/meaning"
+	"github.com/sanjayJ369/LangApp/testhelper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -109,8 +110,9 @@ func TestFlashcards(t *testing.T) {
 }
 
 func validSettings() flashcard.Settings {
+
 	return flashcard.Settings{
-		Learner:  learner.New(),
+		Learner:  learner.New(testhelper.GetTempFileLoc()),
 		Meaning:  meaning.New(),
 		Exporter: exporter.New(),
 	}
