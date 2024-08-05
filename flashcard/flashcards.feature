@@ -27,6 +27,10 @@ Feature: Flashcards
     Then they receive flashcards
     And each flashcards has meaning of the word
 
+  Scenario: Flashcards use lemmatizer
+    When the Learner passes some text
+    Then received flashcards contain words in root form
+
   Scenario: Learner can export flashcards
     When the Learner creates flashcards
     Then they can export them

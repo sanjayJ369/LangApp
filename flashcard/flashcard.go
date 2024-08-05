@@ -16,9 +16,10 @@ type Card struct {
 }
 
 type Flashcards struct {
-	learner  Learner
-	meaning  Meaning
-	exporter Exporter
+	learner    Learner
+	meaning    Meaning
+	exporter   Exporter
+	lemmatizer Lemmatizer
 }
 
 type Learner interface {
@@ -34,10 +35,15 @@ type Exporter interface {
 	Export([]Card) []byte
 }
 
+type Lemmatizer interface {
+	Lemmatize(string) string
+}
+
 type Settings struct {
-	Learner  Learner
-	Meaning  Meaning
-	Exporter Exporter
+	Learner    Learner
+	Meaning    Meaning
+	Exporter   Exporter
+	Lemmatizer Lemmatizer
 }
 
 func New(settings Settings) (*Flashcards, error) {
@@ -47,9 +53,10 @@ func New(settings Settings) (*Flashcards, error) {
 	}
 
 	return &Flashcards{
-		learner:  settings.Learner,
-		meaning:  settings.Meaning,
-		exporter: settings.Exporter,
+		learner:    settings.Learner,
+		meaning:    settings.Meaning,
+		exporter:   settings.Exporter,
+		lemmatizer: settings.Lemmatizer,
 	}, nil
 }
 
@@ -70,12 +77,13 @@ func (f Flashcards) CreateFlashCards(learnerID string, text string) Responce {
 	words := strings.Split(text, " ")
 
 	for _, word := range words {
-		if !seen[word] {
+		lemmtizedWord := f.lemmatizer.Lemmatize(word)
+		if !seen[lemmtizedWord] {
 			flashcards.Cards = append(flashcards.Cards, Card{
-				Word:    word,
-				Meaning: f.meaning.GetMeaning(word),
+				Word:    lemmtizedWord,
+				Meaning: f.meaning.GetMeaning(lemmtizedWord),
 			})
-			seen[word] = true
+			seen[lemmtizedWord] = true
 		}
 	}
 
@@ -97,6 +105,8 @@ func check(setting Settings) error {
 	if setting.Exporter == nil {
 		return fmt.Errorf("exporter is not defined")
 	}
-
+	if setting.Lemmatizer == nil {
+		return fmt.Errorf("lemmatizer is not defined")
+	}
 	return nil
 }

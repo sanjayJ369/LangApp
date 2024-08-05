@@ -97,23 +97,55 @@ func TestFlashcards(t *testing.T) {
 		}
 	})
 
+	t.Run("Flashcards use lemmatizer", func(t *testing.T) {
+		t.Parallel()
+		var lemmatizer LemmatizerSpy
+		f, _ := flashcard.New(validSettings(func(s *flashcard.Settings) {
+			s.Lemmatizer = &lemmatizer
+		}))
+
+		// When the Learner passes some text.
+		f.CreateFlashCards("learner", "Hello world")
+
+		// Then received flashcards contain words in root form.
+		assert.Equal(t, []string{"Hello", "world"}, lemmatizer.words)
+	})
+
 	t.Run("Learner can export flashcards", func(t *testing.T) {
 		t.Parallel()
 		f, _ := flashcard.New(validSettings())
 
 		// When the Learner creates flashcards.
 		f.CreateFlashCards("Learner", "test sentence")
+
 		// Then they can export them.
 		assert.NotEmpty(t, f.Export("Learner"))
 	})
 
 }
 
-func validSettings() flashcard.Settings {
+type LemmatizerSpy struct {
+	words []string
+}
 
-	return flashcard.Settings{
-		Learner:  learner.New(testhelper.GetTempFileLoc()),
-		Meaning:  meaning.New(),
-		Exporter: exporter.New(),
+func (l *LemmatizerSpy) Lemmatize(word string) string {
+	l.words = append(l.words, word)
+	return ""
+}
+
+type settingsOption func(*flashcard.Settings)
+
+func validSettings(opt ...settingsOption) flashcard.Settings {
+
+	s := flashcard.Settings{
+		Learner:    learner.New(testhelper.GetTempFileLoc()),
+		Meaning:    meaning.New(),
+		Lemmatizer: &LemmatizerSpy{},
+		Exporter:   exporter.New(),
 	}
+
+	for _, o := range opt {
+		o(&s)
+	}
+	return s
 }
