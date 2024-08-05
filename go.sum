@@ -1,3 +1,7 @@
+github.com/Enflick/golem v0.0.0-20200226141748-b8519ae60bf4 h1:OcLH6EkKQffov2fkcwnbFbu7XzwW7YGEDCReX519nLY=
+github.com/Enflick/golem v0.0.0-20200226141748-b8519ae60bf4/go.mod h1:1nZp/4JU1D+HMFjKikWvUMnuf65Rd4c92tKHwFQ2bG0=
+github.com/aaaton/golem v0.0.0-20191129093449-a9f1a1b6b185 h1:YZ7uO9PYhucgGqojrk+WQHJBJXHGfmrbdSLPQ5SugL0=
+github.com/aaaton/golem v0.0.0-20191129093449-a9f1a1b6b185/go.mod h1:+lRZffdyzy8gSKC7Rn7rT70p4atkK+21xMu6soK1OmM=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/google/uuid v1.6.0 h1:NIvaJDMOsjHA8n1jAhLSgzrAzy1Hgr+hNrb57e+94F0=
