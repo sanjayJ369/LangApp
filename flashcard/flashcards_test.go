@@ -6,7 +6,6 @@ import (
 	"github.com/sanjayJ369/LangApp/exporter"
 	"github.com/sanjayJ369/LangApp/flashcard"
 	"github.com/sanjayJ369/LangApp/learner"
-	"github.com/sanjayJ369/LangApp/meaning"
 	"github.com/sanjayJ369/LangApp/testhelper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -70,16 +69,16 @@ func TestFlashcards(t *testing.T) {
 		t.Parallel()
 		f, _ := flashcard.New(validSettings())
 		// When Learner Sanjay creates flashcards.
-		sanjayFlashcards := f.CreateFlashCards("Sanjay", "sanjay")
+		sanjayFlashcards := f.CreateFlashCards("Sanjay", "fabaceous")
 
 		// When Learner Dima creates flashcards.
-		dimaFlashcards := f.CreateFlashCards("Dima", "dima")
+		dimaFlashcards := f.CreateFlashCards("Dima", "abaiser")
 
 		// And Dima does not see Sanjay flashcards.
-		assert.NotContains(t, dimaFlashcards.Cards, flashcard.Card{Word: "sanjay"})
+		assert.NotContains(t, dimaFlashcards.Cards, flashcard.Card{Word: "fabaceous"})
 
 		// And Sanjay does not see Dima flashcards.
-		assert.NotContains(t, sanjayFlashcards.Cards, flashcard.Card{Word: "dima"})
+		assert.NotContains(t, sanjayFlashcards.Cards, flashcard.Card{Word: "abaiser"})
 	})
 
 	t.Run("Flashcards contain word along with it's meaning", func(t *testing.T) {
@@ -99,7 +98,7 @@ func TestFlashcards(t *testing.T) {
 
 	t.Run("Flashcards use lemmatizer", func(t *testing.T) {
 		t.Parallel()
-		var lemmatizer LemmatizerSpy
+		var lemmatizer lemmatizerSpy
 		f, _ := flashcard.New(validSettings(func(s *flashcard.Settings) {
 			s.Lemmatizer = &lemmatizer
 		}))
@@ -124,13 +123,19 @@ func TestFlashcards(t *testing.T) {
 
 }
 
-type LemmatizerSpy struct {
+type meaningStub struct{}
+
+func (m meaningStub) GetMeaning(word string) string {
+	return "hello"
+}
+
+type lemmatizerSpy struct {
 	words []string
 }
 
-func (l *LemmatizerSpy) Lemmatize(word string) string {
+func (l *lemmatizerSpy) Lemmatize(word string) string {
 	l.words = append(l.words, word)
-	return ""
+	return word
 }
 
 type settingsOption func(*flashcard.Settings)
@@ -139,8 +144,8 @@ func validSettings(opt ...settingsOption) flashcard.Settings {
 
 	s := flashcard.Settings{
 		Learner:    learner.New(testhelper.GetTempFileLoc()),
-		Meaning:    meaning.New(),
-		Lemmatizer: &LemmatizerSpy{},
+		Meaning:    &meaningStub{},
+		Lemmatizer: &lemmatizerSpy{},
 		Exporter:   exporter.New(),
 	}
 

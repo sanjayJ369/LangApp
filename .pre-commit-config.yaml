@@ -1,0 +1,7 @@
+repos:
+  - repo: local
+    hooks:
+      - id: tests
+        name: running tests
+        language: system
+        entry: make tests

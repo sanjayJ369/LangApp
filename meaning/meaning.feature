@@ -6,5 +6,5 @@ Feature: meaning
 
         Examples:
             | word      | meaning                                   |
-            | abaiser   | Ivory black; animal charcoal.             |
+            | Abaiser   | Ivory black; animal charcoal.             |
             | fabaceous | Having the nature of a bean; like a bean. |

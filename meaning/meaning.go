@@ -13,6 +13,7 @@ type Meaning struct{}
 
 func (m Meaning) GetMeaning(word string) string {
 
+	word = strings.ToLower(word)
 	fp, err := os.OpenFile("../assets/kaikki.org-dictionary-English.jsonl", os.O_RDONLY, 0644)
 	if err != nil {
 		return ""

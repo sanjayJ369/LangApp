@@ -19,7 +19,7 @@ func TestMeaning(t *testing.T) {
 		}
 
 		testCases := map[string]testCase{
-			"abaiser_Ivory_black;_animal_charcoal.":               {"abaiser", "Ivory black; animal charcoal."},
+			"abaiser_Ivory_black;_animal_charcoal.":               {"Abaiser", "Ivory black; animal charcoal."},
 			"fabaceous_Having_the_nature_of_a_bean;_like_a_bean.": {"fabaceous", "Having the nature of a bean; like a bean."},
 		}
 
