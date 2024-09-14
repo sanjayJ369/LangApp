@@ -28,7 +28,7 @@ func TestFlashcardsUsage(t *testing.T) {
 		require.NoError(t, err, "checking settings")
 
 		// When User wants to create flashcards.
-		someText := "this is some random text"
+		someText := "Abaiser fabaceous"
 
 		// Then they can do it.
 		res := cards.CreateFlashCards("learner", someText)

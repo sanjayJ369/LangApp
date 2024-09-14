@@ -10,7 +10,7 @@ import (
 )
 
 type Meaning struct {
-	settings Settings
+	fileloc string
 }
 
 type Settings struct {
@@ -19,14 +19,14 @@ type Settings struct {
 
 func New(s Settings) Meaning {
 	return Meaning{
-		settings: s,
+		fileloc: s.FileLoc,
 	}
 }
 
 func (m Meaning) GetMeaning(word string) string {
 
 	word = strings.ToLower(word)
-	fp, err := os.OpenFile("../assets/kaikki.org-dictionary-English.jsonl", os.O_RDONLY, 0644)
+	fp, err := os.OpenFile(m.fileloc, os.O_RDONLY, 0644)
 	if err != nil {
 		return ""
 	}
