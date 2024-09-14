@@ -31,11 +31,17 @@ func TestMeaning(t *testing.T) {
 
 				_ = testCase // TODO: Use and remove.
 				// When user request the meaning of a <word>.
-				got := meaning.New().GetMeaning(testCase.Word)
+				got := meaning.New(validSettings()).GetMeaning(testCase.Word)
 
 				// Then they receive it's <meaning>.
 				assert.Equal(t, testCase.Meaning, got)
 			})
 		}
 	})
+}
+
+func validSettings() meaning.Settings {
+	return meaning.Settings{
+		FileLoc: "../assets/kaikki.org-dictionary-English.jsonl",
+	}
 }

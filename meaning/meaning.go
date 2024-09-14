@@ -9,7 +9,19 @@ import (
 	"strings"
 )
 
-type Meaning struct{}
+type Meaning struct {
+	settings Settings
+}
+
+type Settings struct {
+	FileLoc string
+}
+
+func New(s Settings) Meaning {
+	return Meaning{
+		settings: s,
+	}
+}
 
 func (m Meaning) GetMeaning(word string) string {
 
@@ -63,8 +75,4 @@ func extractGlosses(dec *json.Decoder) string {
 	}
 
 	return meaning.String()
-}
-
-func New() Meaning {
-	return Meaning{}
 }
