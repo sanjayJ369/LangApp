@@ -5,6 +5,10 @@
     "cucumberautocomplete.strictGherkinCompletion": true,
     "cucumberautocomplete.strictGherkinValidation": true,
     "go.testFlags": [
-        "-race"
-    ]
+        "-race",
+        "-count=1"
+    ],
+    "go.testEnvVars": {
+        "CGO_ENABLED":"1"
+    }
 }
