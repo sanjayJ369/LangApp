@@ -1,14 +1,107 @@
 package parser
 
 import (
+	"bufio"
+	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"os"
 	"strings"
+	"sync"
+	"time"
 
 	"github.com/sanjayJ369/LangApp/database"
 )
+
+type wordMeaning struct {
+	word    string
+	meaning string
+}
+
+type noMeaning struct {
+	error
+}
+
+func (n *noMeaning) Error() string {
+	return "word has no meaning"
+}
+
+var noMeaningError *noMeaning = &noMeaning{}
+
+type ParallelParser struct {
+	sync.Mutex
+	insert    chan wordMeaning
+	reader    *bufio.Reader
+	BytesRead int64
+	limit     int64
+}
+
+func (p *ParallelParser) Read() error {
+
+	for {
+		line, err := p.reader.ReadBytes('\n')
+		p.BytesRead += int64(len(line))
+		if err == io.EOF {
+			return nil
+		}
+		if err != nil {
+			return fmt.Errorf("reading bytes: %w", err)
+		}
+
+		// check the first character
+		// if it is not '{' skip
+		// as the thread might have started in middle of a json entry
+		if len(line) < 7 || string(line[:7]) != `{"pos":` {
+			continue
+		}
+
+		wm, err := extractWordMeaning(line)
+		if errors.As(err, &noMeaningError) {
+			continue
+		}
+
+		if err != nil {
+			return fmt.Errorf("extracting word and meaning: %w", err)
+		}
+
+		p.insert <- *wm
+		if p.BytesRead >= p.limit {
+			return nil
+		}
+	}
+}
+
+func extractWordMeaning(line []byte) (*wordMeaning, error) {
+	dec := json.NewDecoder(bytes.NewReader(line))
+	wm := &wordMeaning{}
+	for {
+		t, err := dec.Token()
+		if err == io.EOF {
+			return wm, nil
+		}
+		if err != nil {
+			return wm, fmt.Errorf("getting token: %w", err)
+		}
+		if t == "word" {
+			wordtkn, err := dec.Token()
+			if err != nil {
+				return wm, fmt.Errorf("getting word token: %w", err)
+			}
+			wm.word = fmt.Sprintf("%s", wordtkn)
+			wm.meaning, err = extractparser(dec)
+
+			if err != nil {
+				if errors.As(err, &noMeaningError) {
+					return wm, noMeaningError
+				}
+				return wm, fmt.Errorf("extracting meaning: %w", err)
+			}
+			return wm, nil
+		}
+	}
+}
 
 type Parser struct {
 	fileloc   string
@@ -52,6 +145,9 @@ func (p *Parser) Parse() error {
 			}
 			word = fmt.Sprintf("%s", wordtkn)
 			meaning, err = extractparser(dec)
+			if err != nil {
+				return fmt.Errorf("extracting phrase: %w", err)
+			}
 
 			err = p.dbhandler.Insert(word, meaning)
 			if err != nil {
@@ -61,12 +157,114 @@ func (p *Parser) Parse() error {
 	}
 }
 
+func (p *Parser) ParallelParse(threadCount int) error {
+
+	insertChan := make(chan wordMeaning, threadCount*5)
+	errChan := make(chan error)
+	doneChan := make(chan bool)
+	activeThreads := threadCount
+	insertedVals := 0
+
+	var wg sync.WaitGroup
+	readers := []*ParallelParser{}
+	fi, err := os.Stat(p.fileloc)
+	if err != nil {
+		return fmt.Errorf("error opening file: %w", err)
+	}
+
+	fileSize := fi.Size()
+	acc := int64(0)
+	limit := fileSize / int64(threadCount)
+
+	for i := 0; i < int(threadCount); i++ {
+
+		fptr, err := os.Open(p.fileloc)
+		if err != nil {
+			return fmt.Errorf("error opening file: %w", err)
+		}
+
+		fptr.Seek(acc, io.SeekStart)
+		r := &ParallelParser{
+			insert:    insertChan,
+			reader:    bufio.NewReader(fptr),
+			BytesRead: 0,
+			limit:     limit,
+		}
+
+		acc += limit
+		readers = append(readers, r)
+		wg.Add(1)
+	}
+
+	for _, r := range readers {
+		go func(r *ParallelParser) {
+			err := r.Read()
+			if err != nil {
+				errChan <- err
+			}
+			wg.Done()
+			activeThreads -= 1
+		}(r)
+	}
+
+	go func() {
+		for {
+			time.Sleep(5 * time.Second)
+			var total int64
+			for _, r := range readers {
+				r.Lock()
+				total += r.BytesRead
+				r.Unlock()
+			}
+			fmt.Println("\nread: ", total, "bytes")
+			fmt.Println("active threads: ", activeThreads)
+			fmt.Printf("completed: %f%%\n", float64(total)/float64(fileSize)*100)
+			fmt.Println("insert buffer:", len(insertChan))
+			fmt.Println("\ninserted vals:", insertedVals)
+		}
+	}()
+
+	go func() {
+		for {
+			select {
+			case <-doneChan:
+				return
+			case wm := <-insertChan:
+				insertedVals += 1
+				err = p.dbhandler.Insert(wm.word, wm.meaning)
+				if err != nil {
+					errChan <- err
+				}
+			}
+		}
+	}()
+
+	go func() {
+		wg.Wait()
+		// complete remaining insertions in the buffer
+		close(insertChan)
+		doneChan <- true
+		for wm := range insertChan {
+			err = p.dbhandler.Insert(wm.word, wm.meaning)
+			if err != nil {
+				errChan <- err
+			}
+		}
+		errChan <- nil
+	}()
+
+	return <-errChan
+}
+
 func extractparser(dec *json.Decoder) (string, error) {
 
 	for {
 		w, err := dec.Token()
 		if err != nil {
 			return "", fmt.Errorf("getting meaning token: %w", err)
+		}
+		if w == "no-gloss" {
+			return "", noMeaningError
 		}
 		if w == "glosses" {
 			w, err = dec.Token()

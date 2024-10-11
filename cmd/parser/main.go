@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
 
 	"github.com/sanjayJ369/LangApp/database"
@@ -11,6 +12,8 @@ import (
 func main() {
 	dictLoc := flag.String("dict", "", "dict is the location of dictionary which contains the word and its meaning")
 	dbLoc := flag.String("db", "", "db is the location of the sqlite3 database where the data should be loaded into, new db is created is it is not present")
+	tcount := flag.Int("t", 1, "t is the number of parallel threads to be run")
+	parallel := flag.Bool("p", false, "p flag inicates if the parser should be run parallely ")
 
 	flag.Parse()
 	if *dictLoc == "" {
@@ -31,7 +34,13 @@ func main() {
 	}
 
 	p := parser.New(setting)
-	err = p.Parse()
+
+	if *parallel {
+		fmt.Println(*tcount)
+		err = p.ParallelParse(*tcount)
+	} else {
+		err = p.Parse()
+	}
 	if err != nil {
 		log.Fatalf("parsing file: %s", err)
 	}
