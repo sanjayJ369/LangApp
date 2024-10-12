@@ -10,10 +10,28 @@ import (
 	"os"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/sanjayJ369/LangApp/database"
 )
+
+type Parser struct {
+	fileloc   string
+	dbhandler database.Handler
+}
+
+type Settings struct {
+	FileLoc   string
+	DBhandler database.Handler
+}
+
+func New(s Settings) *Parser {
+	return &Parser{
+		fileloc:   s.FileLoc,
+		dbhandler: s.DBhandler,
+	}
+}
 
 type wordMeaning struct {
 	word    string
@@ -103,23 +121,6 @@ func extractWordMeaning(line []byte) (*wordMeaning, error) {
 	}
 }
 
-type Parser struct {
-	fileloc   string
-	dbhandler database.Handler
-}
-
-type Settings struct {
-	FileLoc   string
-	DBhandler database.Handler
-}
-
-func New(s Settings) *Parser {
-	return &Parser{
-		fileloc:   s.FileLoc,
-		dbhandler: s.DBhandler,
-	}
-}
-
 func (p *Parser) Parse() error {
 
 	fp, err := os.OpenFile(p.fileloc, os.O_RDONLY, 0644)
@@ -159,13 +160,17 @@ func (p *Parser) Parse() error {
 
 func (p *Parser) ParallelParse(threadCount int) error {
 
-	insertChan := make(chan wordMeaning, threadCount*5)
+	insertChan := make(chan wordMeaning)
 	errChan := make(chan error)
-	doneChan := make(chan bool)
-	activeThreads := threadCount
-	insertedVals := 0
 
-	var wg sync.WaitGroup
+	var insertedVals atomic.Int64
+	insertedVals.Store(0)
+
+	activeThreads := threadCount
+
+	var parserwg sync.WaitGroup
+	var insertwg sync.WaitGroup
+
 	readers := []*ParallelParser{}
 	fi, err := os.Stat(p.fileloc)
 	if err != nil {
@@ -193,7 +198,7 @@ func (p *Parser) ParallelParse(threadCount int) error {
 
 		acc += limit
 		readers = append(readers, r)
-		wg.Add(1)
+		parserwg.Add(1)
 	}
 
 	for _, r := range readers {
@@ -202,7 +207,7 @@ func (p *Parser) ParallelParse(threadCount int) error {
 			if err != nil {
 				errChan <- err
 			}
-			wg.Done()
+			parserwg.Done()
 			activeThreads -= 1
 		}(r)
 	}
@@ -220,30 +225,37 @@ func (p *Parser) ParallelParse(threadCount int) error {
 			fmt.Println("active threads: ", activeThreads)
 			fmt.Printf("completed: %f%%\n", float64(total)/float64(fileSize)*100)
 			fmt.Println("insert buffer:", len(insertChan))
-			fmt.Println("\ninserted vals:", insertedVals)
+			fmt.Println("\ninserted vals:", insertedVals.Load())
 		}
 	}()
 
 	go func() {
-		for {
-			select {
-			case <-doneChan:
-				return
-			case wm := <-insertChan:
-				insertedVals += 1
-				err = p.dbhandler.Insert(wm.word, wm.meaning)
-				if err != nil {
-					errChan <- err
+		for i := 0; i < threadCount*2; i++ {
+			insertwg.Add(1)
+			go func() {
+				for {
+					wm, ok := <-insertChan
+					if !ok {
+						insertwg.Done()
+						return
+					}
+					insertedVals.Store(insertedVals.Load() + 1)
+					err := p.dbhandler.Insert(wm.word, wm.meaning)
+					if err != nil {
+						errChan <- err
+					}
 				}
-			}
+			}()
 		}
+
 	}()
 
 	go func() {
-		wg.Wait()
-		// complete remaining insertions in the buffer
+		parserwg.Wait()
 		close(insertChan)
-		doneChan <- true
+		insertwg.Wait()
+
+		// complete remaining insertions in the buffer
 		for wm := range insertChan {
 			err = p.dbhandler.Insert(wm.word, wm.meaning)
 			if err != nil {

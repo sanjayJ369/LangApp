@@ -23,14 +23,14 @@ func main() {
 		log.Fatalln("db flag is empty")
 	}
 
-	handler, err := database.New(*dbLoc)
+	handler, err := database.NewBadger(*dbLoc)
 	if err != nil {
 		log.Fatalf("creating database: %s", err)
 	}
 
 	setting := parser.Settings{
 		FileLoc:   *dictLoc,
-		DBhandler: *handler,
+		DBhandler: handler,
 	}
 
 	p := parser.New(setting)

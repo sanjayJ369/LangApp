@@ -32,10 +32,10 @@ func TestParallelParse(t *testing.T) {
 func validSettings(tb testing.TB) parser.Settings {
 	tb.Helper()
 	name := testhelper.GetTempFileLoc()
-	handler, err := database.New(name)
+	handler, err := database.NewBadger(name)
 	require.NoError(tb, err, "creating handler")
 	return parser.Settings{
 		FileLoc:   "../assets/temp.json",
-		DBhandler: *handler,
+		DBhandler: handler,
 	}
 }
