@@ -193,7 +193,7 @@ func (p *Parser) ParallelParse(threadCount int) error {
 			insert:    insertChan,
 			reader:    bufio.NewReader(fptr),
 			BytesRead: 0,
-			limit:     limit,
+			limit:     int64(float64(limit) * 1.4),
 		}
 
 		acc += limit

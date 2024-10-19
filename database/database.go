@@ -1,24 +1,29 @@
 package database
 
 import (
-	"database/sql"
 	"fmt"
 
 	"github.com/dgraph-io/badger/v4"
-	_ "modernc.org/sqlite"
+	"github.com/jmoiron/sqlx"
+	_ "github.com/mattn/go-sqlite3"
 )
 
 type Handler interface {
 	Insert(key, val string) error
 	Get(key string) (string, error)
+	Close() error
 }
 
 type SqliteHandler struct {
-	db *sql.DB
+	db *sqlx.DB
 }
 
 type BadgerHandler struct {
 	db *badger.DB
+}
+
+func (d BadgerHandler) Close() error {
+	return d.db.Close()
 }
 
 func (d BadgerHandler) Insert(key, val string) error {
@@ -63,9 +68,19 @@ func NewBadger(dataSourceName string) (*BadgerHandler, error) {
 }
 
 func NewSqlite(dataSouceName string) (*SqliteHandler, error) {
-	db, err := sql.Open("sqlite", dataSouceName)
+	db, err := sqlx.Connect("sqlite3", dataSouceName)
 	if err != nil {
 		return nil, fmt.Errorf("opening db: %w", err)
+	}
+
+	_, err = db.Exec("PRAGMA journal_mode = WAL;")
+	if err != nil {
+		return nil, fmt.Errorf("setting WAL mode: %s", err)
+	}
+
+	_, err = db.Exec("PRAGMA timeout = 10000;")
+	if err != nil {
+		return nil, fmt.Errorf("setting WAL mode: %s", err)
 	}
 
 	query := `CREATE TABLE IF NOT EXISTS meaning(
@@ -83,12 +98,29 @@ func NewSqlite(dataSouceName string) (*SqliteHandler, error) {
 }
 
 func (h *SqliteHandler) Insert(word, meaning string) error {
-	insQuery := `INSERT INTO meaning 
-	values(?, ?)
-	ON CONFLICT(word) DO UPDATE SET meaning=excluded.meaning;`
-	_, err := h.db.Exec(insQuery, word, meaning)
-	if err != nil {
-		return fmt.Errorf("inserting values: %w", err)
+	// retry failed insertes
+	for i := 0; i < 3; i++ {
+		tx, err := h.db.Begin()
+		if err != nil {
+			return fmt.Errorf("creating transcation")
+		}
+
+		insQuery := `INSERT INTO meaning 
+		values(?, ?)
+		ON CONFLICT(word) DO UPDATE SET meaning=excluded.meaning;`
+		_, err = tx.Exec(insQuery, word, meaning)
+		if err != nil {
+			tx.Rollback()
+			if err.Error() == "database is locked" {
+				continue
+			}
+			return fmt.Errorf("inserting values: %w", err)
+		}
+
+		err = tx.Commit()
+		if err != nil {
+			return fmt.Errorf("commit failed: %w", err)
+		}
 	}
 	return nil
 }
@@ -102,4 +134,8 @@ func (h *SqliteHandler) Get(word string) (string, error) {
 		return "", fmt.Errorf("scanning row: %w", err)
 	}
 	return meaning, nil
+}
+
+func (h *SqliteHandler) Close() error {
+	return h.db.Close()
 }

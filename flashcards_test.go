@@ -3,6 +3,7 @@ package flashcards_test
 import (
 	"testing"
 
+	"github.com/sanjayJ369/LangApp/database"
 	"github.com/sanjayJ369/LangApp/exporter"
 	"github.com/sanjayJ369/LangApp/flashcard"
 	"github.com/sanjayJ369/LangApp/learner"
@@ -18,9 +19,11 @@ func TestFlashcardsUsage(t *testing.T) {
 
 	t.Run("User creates flashcards", func(t *testing.T) {
 		t.Parallel()
+		handler, err := database.NewSqlite("./assets/meaning.db")
+		require.NoError(t, err)
 		settings := flashcard.Settings{
 			Learner:    learner.New(testhelper.GetTempFileLoc()),
-			Meaning:    meaning.New(meaning.Settings{FileLoc: "./assets/kaikki.org-dictionary-English.jsonl"}),
+			Meaning:    meaning.New(meaning.Settings{DBHandler: handler}),
 			Exporter:   exporter.New(),
 			Lemmatizer: lemmatizer.New(),
 		}
