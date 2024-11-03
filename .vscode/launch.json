@@ -9,7 +9,8 @@
             "type": "go",
             "request": "launch",
             "mode": "auto",
-            "program": "${fileDirname}"
+            "program": "${fileDirname}",
+            "args": ["-t","Wikipedia is hosted by the Wikimedia Foundation, a non-profit organization that also hosts a range of other projects."]
         }
     ]
 }

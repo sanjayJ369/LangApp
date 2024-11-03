@@ -24,6 +24,13 @@ func main() {
 	}
 
 	handler, err := database.NewSqlite(*dbLoc)
+	defer func() {
+		err := handler.Close()
+		if err != nil {
+			log.Fatalf("closing database: %s", err.Error())
+		}
+	}()
+
 	if err != nil {
 		log.Fatalf("creating database: %s", err)
 	}

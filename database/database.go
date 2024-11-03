@@ -78,15 +78,21 @@ func NewSqlite(dataSouceName string) (*SqliteHandler, error) {
 		return nil, fmt.Errorf("setting WAL mode: %s", err)
 	}
 
+	_, err = db.Exec("PRAGMA wal_autocheckpoint=1000;;")
+	if err != nil {
+		return nil, fmt.Errorf("setting WAL mode: %s", err)
+	}
+
 	_, err = db.Exec("PRAGMA timeout = 10000;")
 	if err != nil {
 		return nil, fmt.Errorf("setting WAL mode: %s", err)
 	}
 
 	query := `CREATE TABLE IF NOT EXISTS meaning(
-		word varchar primary key, 
-		meaning varchar 
-	)`
+		word varchar , 
+		meaning varchar ,
+		primary key (word, meaning)
+	);`
 	_, err = db.Exec(query)
 	if err != nil {
 		return nil, fmt.Errorf("creating table: %w", err)
@@ -105,9 +111,8 @@ func (h *SqliteHandler) Insert(word, meaning string) error {
 			return fmt.Errorf("creating transcation")
 		}
 
-		insQuery := `INSERT INTO meaning 
-		values(?, ?)
-		ON CONFLICT(word) DO UPDATE SET meaning=excluded.meaning;`
+		insQuery := `INSERT OR IGNORE INTO meaning (word, meaning)
+			VALUES (?, ?) `
 		_, err = tx.Exec(insQuery, word, meaning)
 		if err != nil {
 			tx.Rollback()

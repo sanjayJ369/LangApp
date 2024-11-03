@@ -15,11 +15,13 @@ import (
 )
 
 func TestFlashcardsUsage(t *testing.T) {
-	t.Parallel()
 
 	t.Run("User creates flashcards", func(t *testing.T) {
-		t.Parallel()
+
 		handler, err := database.NewSqlite("./assets/meaning.db")
+		t.Cleanup(func() {
+			require.NoError(t, handler.Close(), "closing sqlite db")
+		})
 		require.NoError(t, err)
 		settings := flashcard.Settings{
 			Learner:    learner.New(testhelper.GetTempFileLoc()),

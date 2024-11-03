@@ -10,12 +10,12 @@ import (
 )
 
 func TestMeaning(t *testing.T) {
-	t.Parallel()
+
 	settings, cleanup := validSettings(t)
 	t.Cleanup(cleanup)
+	meaningGetter := meaning.New(settings)
 
 	t.Run("get word meaning", func(t *testing.T) {
-		t.Parallel()
 
 		type testCase struct {
 			Word    string `field:"word"`
@@ -23,8 +23,8 @@ func TestMeaning(t *testing.T) {
 		}
 
 		testCases := map[string]testCase{
-			"abaiser_Ivory_black;_animal_charcoal.":               {"abaiser", "Ivory black; animal charcoal."},
-			"fabaceous_Having_the_nature_of_a_bean;_like_a_bean.": {"fabaceous", "Having the nature of a bean; like a bean."},
+			"abaiser_Ivory_black;_animal_charcoal.,":               {"abaiser", "Ivory black; animal charcoal.,"},
+			"fabaceous_Having_the_nature_of_a_bean;_like_a_bean.,": {"fabaceous", "Having the nature of a bean; like a bean.,"},
 		}
 
 		for name, testCase := range testCases {
@@ -35,7 +35,7 @@ func TestMeaning(t *testing.T) {
 
 				_ = testCase // TODO: Use and remove.
 				// When user request the meaning of a <word>.
-				got := meaning.New(settings).GetMeaning(testCase.Word)
+				got := meaningGetter.GetMeaning(testCase.Word)
 
 				// Then they receive it's <meaning>.
 				assert.Equal(t, testCase.Meaning, got)

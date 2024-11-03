@@ -1,6 +1,7 @@
 package parser_test
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/sanjayJ369/LangApp/database"
@@ -11,7 +12,8 @@ import (
 
 func TestParser(t *testing.T) {
 	t.Parallel()
-	settings := validSettings(t)
+	settings, clean := validSettings(t)
+	t.Cleanup(clean)
 	err := parser.New(settings).Parse()
 	require.NoError(t, err, "parsing")
 	meaning, err := settings.DBhandler.Get("abaiser")
@@ -21,7 +23,8 @@ func TestParser(t *testing.T) {
 
 func TestParallelParse(t *testing.T) {
 	t.Parallel()
-	settings := validSettings(t)
+	settings, clean := validSettings(t)
+	t.Cleanup(clean)
 	err := parser.New(settings).ParallelParse(1)
 	require.NoError(t, err, "parsing")
 	meaning, err := settings.DBhandler.Get("abaiser")
@@ -29,13 +32,16 @@ func TestParallelParse(t *testing.T) {
 	t.Log(meaning)
 }
 
-func validSettings(tb testing.TB) parser.Settings {
+func validSettings(tb testing.TB) (parser.Settings, func()) {
 	tb.Helper()
 	name := testhelper.GetTempFileLoc()
 	handler, err := database.NewBadger(name)
 	require.NoError(tb, err, "creating handler")
 	return parser.Settings{
-		FileLoc:   "../assets/temp.json",
-		DBhandler: handler,
-	}
+			FileLoc:   "../assets/temp.json",
+			DBhandler: handler,
+		}, func() {
+			fmt.Println("closing db(parser)")
+			require.NoError(tb, handler.Close(), "closing badger")
+		}
 }
