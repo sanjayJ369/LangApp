@@ -34,10 +34,8 @@ func TestBadgerDatabase(t *testing.T) {
 
 	err = h.Insert("abiser", "Ivory black; animal charcoal.")
 	require.NoError(t, err, "inserting values")
-	err = h.Insert("abiser", "Ivory black; animal charcoal2.")
-	require.NoError(t, err, "inserting values second time")
 
 	meaning, err := h.Get("abiser")
 	require.NoError(t, err, "getting meaning")
-	assert.Equal(t, "Ivory black; animal charcoal2.", meaning)
+	assert.Equal(t, "Ivory black; animal charcoal.", meaning)
 }

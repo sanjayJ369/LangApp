@@ -27,11 +27,20 @@ func (d BadgerHandler) Close() error {
 }
 
 func (d BadgerHandler) Insert(key, val string) error {
+	prevVal, err := d.Get(key)
+	var newVal string
+	// previous value does not exist
+	if err != nil {
+		newVal = val
+	} else {
+		newVal = prevVal + "," + val
+	}
+
 	return d.db.Update(func(txn *badger.Txn) error {
 		if len(key) == 0 {
 			return nil
 		}
-		return txn.Set([]byte(key), []byte(val))
+		return txn.Set([]byte(key), []byte(newVal))
 	})
 }
 
@@ -44,7 +53,6 @@ func (d BadgerHandler) Get(key string) (string, error) {
 		}
 		item.Value(func(val []byte) error {
 			value = append([]byte{}, val...)
-			fmt.Println(string(val))
 			return nil
 		})
 		return nil

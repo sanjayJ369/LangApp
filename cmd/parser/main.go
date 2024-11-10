@@ -23,7 +23,7 @@ func main() {
 		log.Fatalln("db flag is empty")
 	}
 
-	handler, err := database.NewSqlite(*dbLoc)
+	handler, err := database.NewBadger(*dbLoc)
 	defer func() {
 		err := handler.Close()
 		if err != nil {

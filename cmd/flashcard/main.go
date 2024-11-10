@@ -24,7 +24,7 @@ func main() {
 
 	learnerId := "test"
 
-	dbhandler, err := database.NewBadger("../../assets/meaning/")
+	dbhandler, err := database.NewBadger("./assets/meaning/")
 	if err != nil {
 		log.Fatalf("opening db: %s", err)
 	}
@@ -33,7 +33,7 @@ func main() {
 		DBHandler: dbhandler,
 	}
 	settings := flashcard.Settings{
-		Learner:    learner.New("../../assets/meaning.db"),
+		Learner:    learner.New("../../assets/learnerData"),
 		Meaning:    meaning.New(meaningSetting),
 		Exporter:   exporter.New(),
 		Lemmatizer: lemmatizer.New(),
