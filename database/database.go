@@ -2,6 +2,7 @@ package database
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/dgraph-io/badger/v4"
 	"github.com/jmoiron/sqlx"
@@ -140,12 +141,21 @@ func (h *SqliteHandler) Insert(word, meaning string) error {
 
 func (h *SqliteHandler) Get(word string) (string, error) {
 	getQuery := "SELECT meaning FROM meaning WHERE word=?"
-	row := h.db.QueryRow(getQuery, word)
-	var meaning string
-	err := row.Scan(&meaning)
+	rows, err := h.db.Query(getQuery, word)
+	defer rows.Close()
 	if err != nil {
-		return "", fmt.Errorf("scanning row: %w", err)
+		return "", fmt.Errorf("getting meaning: %w", err)
 	}
+	senses := make([]string, 0)
+	var meaning string
+	for rows.Next() {
+		err := rows.Scan(&meaning)
+		if err != nil {
+			return "", fmt.Errorf("scanning row: %w", err)
+		}
+		senses = append(senses, meaning)
+	}
+	meaning = strings.Join(senses, ",")
 	return meaning, nil
 }
 

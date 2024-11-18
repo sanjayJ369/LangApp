@@ -24,7 +24,7 @@ func main() {
 
 	learnerId := "test"
 
-	dbhandler, err := database.NewBadger("./assets/meaning/")
+	dbhandler, err := database.NewSqlite("./assets/meaning.db")
 	if err != nil {
 		log.Fatalf("opening db: %s", err)
 	}
