@@ -10,5 +10,6 @@
     ],
     "go.testEnvVars": {
         "CGO_ENABLED":"1"
-    }
+    },
+    "makefile.configureOnOpen": false
 }
