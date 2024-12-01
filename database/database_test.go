@@ -10,42 +10,50 @@ import (
 	_ "modernc.org/sqlite"
 )
 
-func TestDatabase(t *testing.T) {
-	t.Parallel()	
-	
+func TestSqlite(t *testing.T) {
+	t.Parallel()
+
 	tmpFile := testhelper.GetTempFileLoc()
-	
+
 	h, err := database.NewSqlite(tmpFile)
 	require.NoError(t, err, "creating handler")
 
-	err = h.Insert("abiser", "Ivory black; animal charcoal.")
-	require.NoError(t, err, "inserting values")
+	t.Cleanup(func() {
+		require.NoError(t, h.Close(), "closing db")
+	})
 
 	err = h.Insert("abiser", "Ivory black; animal charcoal.")
-	require.NoError(t, err, "inserting values second time")
+	require.NoError(t, err, "inserting value")
+
+	err = h.Insert("abiser", "Ivory black; animal charcoal.")
+	require.NoError(t, err, "inserting value second time")
 
 	meaning, err := h.Get("abiser")
-	require.NoError(t, err, "getting meaning")
+	require.NoError(t, err, "getting value")
 
-	assert.Equal(t, "Ivory black; animal charcoal.", meaning)
+	assert.Equal(t, meaning, "Ivory black; animal charcoal.")
 }
 
-func TestBadgerDatabase(t *testing.T) {
+func TestBadger(t *testing.T) {
 	t.Parallel()
-	
+
 	tmpFile := testhelper.GetTempFileLoc()
-	
+
 	h, err := database.NewBadger(tmpFile + "/")
-	t.Cleanup(func() {
-		require.NoError(t, h.Close(), "closing badger")
-	})
 	require.NoError(t, err, "creating handler")
 
+	t.Cleanup(func() {
+		require.NoError(t, h.Close(), "closing db")
+	})
+
 	err = h.Insert("abiser", "Ivory black; animal charcoal.")
-	require.NoError(t, err, "inserting values")
+	require.NoError(t, err, "inserting value")
+
+	err = h.Insert("abiser", "Ivory black; animal charcoal.")
+	require.NoError(t, err, "inserting value second time")
 
 	meaning, err := h.Get("abiser")
-	require.NoError(t, err, "getting meaning")
-	
-	assert.Equal(t, "Ivory black; animal charcoal.", meaning)
+	require.NoError(t, err, "getting value")
+
+	assert.Equal(t, meaning, "Ivory black; animal charcoal.")
 }
