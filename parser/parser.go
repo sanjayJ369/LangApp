@@ -11,8 +11,6 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
-
-	"github.com/sanjayJ369/LangApp/database"
 )
 
 type Transation struct {
@@ -34,14 +32,20 @@ type Insertable interface {
 	Insert(string, string) error
 }
 
+type dbHandler interface {
+	Insert(key, val string) error
+	Get(key string) (string, error)
+	Close() error
+}
+
 type Parser struct {
 	fileloc   string
-	dbhandler database.Handler
+	dbhandler dbHandler
 }
 
 type Settings struct {
 	FileLoc   string
-	DBhandler database.Handler
+	DBhandler dbHandler
 }
 
 func New(s Settings) *Parser {

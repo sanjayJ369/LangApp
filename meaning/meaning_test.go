@@ -5,17 +5,22 @@ import (
 
 	"github.com/sanjayJ369/LangApp/database"
 	"github.com/sanjayJ369/LangApp/meaning"
+	"github.com/sanjayJ369/LangApp/parser"
+	"github.com/sanjayJ369/LangApp/testhelper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestMeaning(t *testing.T) {
+	t.Parallel()
 
 	settings, cleanup := validSettings(t)
 	t.Cleanup(cleanup)
+
 	meaningGetter := meaning.New(settings)
 
 	t.Run("get word meaning", func(t *testing.T) {
+		t.Parallel()
 
 		type testCase struct {
 			Word    string `field:"word"`
@@ -28,12 +33,9 @@ func TestMeaning(t *testing.T) {
 		}
 
 		for name, testCase := range testCases {
-			testCase := testCase
-
 			t.Run(name, func(t *testing.T) {
 				t.Parallel()
 
-				_ = testCase // TODO: Use and remove.
 				// When user request the meaning of a <word>.
 				got := meaningGetter.GetMeaning(testCase.Word)
 
@@ -46,11 +48,21 @@ func TestMeaning(t *testing.T) {
 
 func validSettings(tb testing.TB) (settings meaning.Settings, cleanup func()) {
 	tb.Helper()
-	handler, err := database.NewSqlite("../assets/meaning.db")
-	require.NoError(tb, err, "creating sqlite3")
+
+	tmpFile := testhelper.GetTempFileLoc()
+
+	h, err := database.NewSqlite(tmpFile)
+	require.NoError(tb, err, "creating sqlite db handler")
+
+	p := parser.New(parser.Settings{
+		FileLoc:   "./testfiles/vocabulary.jsonl",
+		DBhandler: h,
+	})
+	require.NoError(tb, p.Parse(), "parsing vocabulary")
+
 	return meaning.Settings{
-			DBHandler: handler,
+			DBHandler: h,
 		}, func() {
-			require.NoError(tb, handler.Close(), "closing sqlite3")
+			require.NoError(tb, h.Close(), "closing sqlite db handler")
 		}
 }
