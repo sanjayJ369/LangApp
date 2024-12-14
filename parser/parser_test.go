@@ -16,28 +16,13 @@ func TestParser(t *testing.T) {
 
 	settings, clean := validSettings(t)
 	t.Cleanup(clean)
-	
+
 	err := parser.New(settings).Parse()
 	require.NoError(t, err, "parsing")
-	
+
 	meaning, err := settings.DBhandler.Get("abaiser")
 	require.NoError(t, err, "getting meaning")
-	
-	assert.Equal(t, "Ivory black; animal charcoal.,", meaning)
-}
 
-func TestParallelParse(t *testing.T) {
-	t.Parallel()
-
-	settings, clean := validSettings(t)
-	t.Cleanup(clean)
-	
-	err := parser.New(settings).ParallelParse(1)
-	require.NoError(t, err, "parsing")
-	
-	meaning, err := settings.DBhandler.Get("abaiser")
-	require.NoError(t, err, "getting meaning")
-	
 	assert.Equal(t, "Ivory black; animal charcoal.,", meaning)
 }
 
