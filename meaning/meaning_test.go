@@ -1,23 +1,16 @@
 package meaning_test
 
 import (
+	"errors"
 	"testing"
 
-	"github.com/sanjayJ369/LangApp/database"
 	"github.com/sanjayJ369/LangApp/meaning"
-	"github.com/sanjayJ369/LangApp/parser"
-	"github.com/sanjayJ369/LangApp/testhelper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestMeaning(t *testing.T) {
 	t.Parallel()
-
-	settings, cleanup := validSettings(t)
-	t.Cleanup(cleanup)
-
-	meaningGetter := meaning.New(settings)
 
 	t.Run("get word meaning", func(t *testing.T) {
 		t.Parallel()
@@ -36,8 +29,16 @@ func TestMeaning(t *testing.T) {
 			t.Run(name, func(t *testing.T) {
 				t.Parallel()
 
+				var meaningGetter fakeMeaningGetter
+				meaningGetter.add(testCase.Word, testCase.Meaning)
+
+				meaningH, err := meaning.New(meaning.Settings{
+					GetMeaning: &meaningGetter,
+				})
+				require.NoError(t, err, "creating meaginig handler")
+
 				// When user request the meaning of a <word>.
-				got := meaningGetter.GetMeaning(testCase.Word)
+				got := meaningH.GetMeaning(testCase.Word)
 
 				// Then they receive it's <meaning>.
 				assert.Equal(t, testCase.Meaning, got)
@@ -46,23 +47,20 @@ func TestMeaning(t *testing.T) {
 	})
 }
 
-func validSettings(tb testing.TB) (settings meaning.Settings, cleanup func()) {
-	tb.Helper()
+type fakeMeaningGetter struct {
+	meanings [][]string
+}
 
-	tmpFile := testhelper.GetTempFileLoc()
+func (f *fakeMeaningGetter) add(key, val string) {
+	f.meanings = append(f.meanings, []string{key, val})
+}
 
-	h, err := database.NewSqlite(tmpFile)
-	require.NoError(tb, err, "creating sqlite db handler")
-
-	p := parser.New(parser.Settings{
-		FileLoc:   "./testfiles/vocabulary.jsonl",
-		DBhandler: h,
-	})
-	require.NoError(tb, p.Parse(), "parsing vocabulary")
-
-	return meaning.Settings{
-			DBHandler: h,
-		}, func() {
-			require.NoError(tb, h.Close(), "closing sqlite db handler")
+func (f *fakeMeaningGetter) Get(key string) (string, error) {
+	for _, v := range f.meanings {
+		if v[0] == key {
+			return v[1], nil
 		}
+	}
+
+	return "", errors.New("no meaning")
 }

@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"log"
+	"os"
 
 	"github.com/sanjayJ369/LangApp/database"
 	"github.com/sanjayJ369/LangApp/parser"
@@ -32,12 +33,21 @@ func main() {
 		log.Fatalf("creating database: %s", err)
 	}
 
+	dict, err := os.Open(*dictLoc)
+	if err != nil {
+		log.Fatalf("opening dictionary: %s", err)
+	}
+	defer dict.Close()
+
 	setting := parser.Settings{
-		FileLoc:   *dictLoc,
+		Content:   dict,
 		DBhandler: handler,
 	}
 
-	p := parser.New(setting)
+	p, err := parser.New(setting)
+	if err != nil {
+		log.Fatalf("creating parser: %s", err)
+	}
 
 	err = p.Parse()
 	if err != nil {

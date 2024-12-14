@@ -3,8 +3,9 @@ package parser
 import (
 	"bufio"
 	"encoding/json"
+	"errors"
 	"fmt"
-	"os"
+	"io"
 	"strings"
 )
 
@@ -30,31 +31,47 @@ type dbHandler interface {
 }
 
 type Parser struct {
-	fileloc   string
+	content   io.Reader
 	dbhandler dbHandler
 }
 
 type Settings struct {
-	FileLoc   string
+	Content   io.Reader
 	DBhandler dbHandler
 }
 
-func New(s Settings) *Parser {
-	return &Parser{
-		fileloc:   s.FileLoc,
-		dbhandler: s.DBhandler,
+func check(s Settings) error {
+	var aErr error
+
+	if s.Content == nil {
+		aErr = errors.Join(aErr, errors.New("no content"))
 	}
+
+	if s.DBhandler == nil {
+		aErr = errors.Join(aErr, errors.New("no db handler"))
+	}
+
+	return aErr
+}
+
+func New(settings Settings) (*Parser, error) {
+	err := check(settings)
+	if err != nil {
+		return nil, fmt.Errorf("checking settings: %w", err)
+	}
+
+	return &Parser{
+		content:   settings.Content,
+		dbhandler: settings.DBhandler,
+	}, nil
 }
 
 func (p *Parser) Parse() error {
-	fp, err := os.OpenFile(p.fileloc, os.O_RDONLY, 0644)
-	if err != nil {
-		return fmt.Errorf("opening file: %w", err)
-	}
-	defer fp.Close()
+	fp := p.content
 
 	scn := bufio.NewScanner(fp)
 	word := &Word{}
+	var err error
 
 	for scn.Scan() {
 		if len(scn.Bytes()) == 0 {

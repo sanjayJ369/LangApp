@@ -1,7 +1,7 @@
 package parser_test
 
 import (
-	"fmt"
+	"os"
 	"testing"
 
 	"github.com/sanjayJ369/LangApp/database"
@@ -14,11 +14,12 @@ import (
 func TestParser(t *testing.T) {
 	t.Parallel()
 
-	settings, clean := validSettings(t)
-	t.Cleanup(clean)
+	settings := validSettings(t)
 
-	err := parser.New(settings).Parse()
-	require.NoError(t, err, "parsing")
+	p, err := parser.New(settings)
+	require.NoError(t, err, "creating parser")
+
+	require.NoError(t, p.Parse(), "parsing")
 
 	meaning, err := settings.DBhandler.Get("abaiser")
 	require.NoError(t, err, "getting meaning")
@@ -26,7 +27,7 @@ func TestParser(t *testing.T) {
 	assert.Equal(t, "Ivory black; animal charcoal.,", meaning)
 }
 
-func validSettings(tb testing.TB) (parser.Settings, func()) {
+func validSettings(tb testing.TB) parser.Settings {
 	tb.Helper()
 
 	name := testhelper.GetTempFileLoc()
@@ -34,11 +35,19 @@ func validSettings(tb testing.TB) (parser.Settings, func()) {
 	handler, err := database.NewBadger(name)
 	require.NoError(tb, err, "creating handler")
 
+	tb.Cleanup(func() {
+		require.NoError(tb, handler.Close(), "closing handler")
+	})
+
+	f, err := os.Open("./testfiles/vocabulary.jsonl")
+	require.NoError(tb, err, "opening vocabulary file")
+
+	tb.Cleanup(func() {
+		require.NoError(tb, f.Close(), "closing vocabulary file")
+	})
+
 	return parser.Settings{
-			FileLoc:   "./testfiles/vocabulary.jsonl",
-			DBhandler: handler,
-		}, func() {
-			fmt.Println("closing db(parser)")
-			require.NoError(tb, handler.Close(), "closing badger")
-		}
+		Content:   f,
+		DBhandler: handler,
+	}
 }
