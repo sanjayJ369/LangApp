@@ -2,6 +2,7 @@ package parser_test
 
 import (
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/sanjayJ369/LangApp/parser"
@@ -26,10 +27,19 @@ func TestParser(t *testing.T) {
 		DBhandler: &h,
 	})
 	require.NoError(t, err, "creating parser")
-	
+
 	require.NoError(t, p.Parse(), "parsing")
 
-	assert.Equal(t, "Ivory black; animal charcoal.,", h.get("abaiser"))
+	assert.Equal(t, "Ivory black; animal charcoal.", h.get("abaiser"), "wrong result")
+	assert.Equal(
+		t,
+		strings.Join([]string{
+			"The act of destroying a fetus in the womb; feticide.",
+			"An agent responsible for an abortion (the destruction of a fetus); abortifacient.",
+		}, "\n"),
+		h.get("aborticide"),
+		"wrong result",
+	)
 }
 
 type fakeDBHandler struct {

@@ -55,13 +55,7 @@ type token struct {
 }
 
 type sense struct {
-	Glosses       []string      `json:"glosses"`
-	Transalations []translation `json:"translations"`
-}
-
-type translation struct {
-	Word  string `json:"word"`
-	Sense string `json:"sense"`
+	Glosses []string `json:"glosses"`
 }
 
 func (p *Parser) Parse() error {
@@ -92,39 +86,35 @@ func (p *Parser) Parse() error {
 }
 
 func insertToken(p DBHandler, tok *token) error {
-	for _, sense := range tok.Senses {
-		if len(sense.Glosses) != 0 {
-			var meaning strings.Builder
+	var meaning strings.Builder
 
-			for _, gloss := range sense.Glosses {
-				_, err := meaning.WriteString(gloss + ",")
-				if err != nil {
-					return fmt.Errorf("concatinating glosses: %w", err)
-				}
+	for i, sense := range tok.Senses {
+		for j, gloss := range sense.Glosses {
+			_, err := meaning.WriteString(gloss)
+			if err != nil {
+				return fmt.Errorf("writing gloss: %w", err)
 			}
 
-			err := p.Insert(tok.Word, meaning.String())
-			if err != nil {
-				return fmt.Errorf("inserting meaing values to db: %w", err)
+			if j < len(sense.Glosses)-1 {
+				_, err = meaning.WriteString("\n")
+				if err != nil {
+					return fmt.Errorf("writing new line")
+				}
 			}
 		}
 
-		err := insertTranslations(p, sense.Transalations)
-		if err != nil {
-			return fmt.Errorf("inserting transations: %w", err)
+		if i < len(tok.Senses)-1 {
+			_, err := meaning.WriteString("\n")
+			if err != nil {
+				return fmt.Errorf("writing new line")
+			}
 		}
 	}
 
-	return nil
-}
-
-func insertTranslations(p DBHandler, translations []translation) error {
-	for _, lang := range translations {
-		if len(lang.Sense) != 0 {
-			err := p.Insert(lang.Word, lang.Sense)
-			if err != nil {
-				return fmt.Errorf("inserting meaing values to db: %w", err)
-			}
+	if meaning.Len() > 0 {
+		err := p.Insert(tok.Word, meaning.String())
+		if err != nil {
+			return fmt.Errorf("inserting meaing: %w", err)
 		}
 	}
 
