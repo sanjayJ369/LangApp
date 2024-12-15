@@ -56,6 +56,7 @@ func (p *Parser) Parse(content io.Reader) error {
 
 	var (
 		tok token
+		meaning strings.Builder
 		err error
 	)
 
@@ -69,7 +70,7 @@ func (p *Parser) Parse(content io.Reader) error {
 			return fmt.Errorf("unmarshalling token: %w", err)
 		}
 
-		err = insertToken(p.dbhandler, &tok)
+		err = insertToken(p.dbhandler, &tok, meaning)
 		if err != nil {
 			return fmt.Errorf("inserting token: %w", err)
 		}
@@ -78,9 +79,9 @@ func (p *Parser) Parse(content io.Reader) error {
 	return nil
 }
 
-func insertToken(p DBHandler, tok *token) error {
-	var meaning strings.Builder
-
+func insertToken(p DBHandler, tok *token, meaning strings.Builder) error {
+	meaning.Reset()
+	
 	for i, sense := range tok.Senses {
 		for j, gloss := range sense.Glosses {
 			_, err := meaning.WriteString(gloss)
