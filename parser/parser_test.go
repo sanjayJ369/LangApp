@@ -1,6 +1,8 @@
 package parser_test
 
 import (
+	"bytes"
+	"io"
 	"os"
 	"strings"
 	"testing"
@@ -14,21 +16,19 @@ func TestParser(t *testing.T) {
 	t.Parallel()
 
 	f, err := os.Open("./testfiles/vocabulary.jsonl")
-	require.NoError(t, err, "opening vocabulary file")
-
+	require.NoError(t, err, "opening vocabulary")
 	t.Cleanup(func() {
-		require.NoError(t, f.Close(), "closing vocabulary file")
+		require.NoError(t, f.Close(), "closing vocabulary")
 	})
 
 	var h fakeDBHandler
 
 	p, err := parser.New(parser.Settings{
-		Content:   f,
 		DBhandler: &h,
 	})
 	require.NoError(t, err, "creating parser")
 
-	require.NoError(t, p.Parse(), "parsing")
+	require.NoError(t, p.Parse(f), "parsing")
 
 	assert.Equal(t, "Ivory black; animal charcoal.", h.get("abaiser"), "wrong result")
 	assert.Equal(
@@ -40,6 +40,34 @@ func TestParser(t *testing.T) {
 		h.get("aborticide"),
 		"wrong result",
 	)
+}
+
+func BenchmarkParser(b *testing.B) {
+	f, err := os.Open("./testfiles/vocabulary.jsonl")
+	require.NoError(b, err, "opening vocabulary")
+	b.Cleanup(func() {
+		require.NoError(b, f.Close(), "closing vocabulary")
+	})
+
+	var h noOpDBHandler
+
+	p, err := parser.New(parser.Settings{
+		DBhandler: h,
+	})
+	require.NoError(b, err, "creating parser")
+
+	content, err := io.ReadAll(f)
+	require.NoError(b, err, "reading vocabulary")
+
+	r := bytes.NewReader(content)
+
+	b.ResetTimer()
+
+	for n := 0; n < b.N; n++ {
+		r.Reset(content)
+
+		require.NoError(b, p.Parse(r), "parsing")
+	}
 }
 
 type fakeDBHandler struct {
@@ -60,4 +88,10 @@ func (f *fakeDBHandler) get(key string) string {
 	}
 
 	return ""
+}
+
+type noOpDBHandler struct{}
+
+func (n noOpDBHandler) Insert(key, val string) error {
+	return nil
 }

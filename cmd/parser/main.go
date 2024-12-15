@@ -40,7 +40,6 @@ func main() {
 	defer dict.Close()
 
 	setting := parser.Settings{
-		Content:   dict,
 		DBhandler: handler,
 	}
 
@@ -49,7 +48,7 @@ func main() {
 		log.Fatalf("creating parser: %s", err)
 	}
 
-	err = p.Parse()
+	err = p.Parse(dict)
 	if err != nil {
 		log.Fatalf("parsing file: %s", err)
 	}

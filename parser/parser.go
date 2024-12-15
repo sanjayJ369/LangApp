@@ -14,16 +14,11 @@ type DBHandler interface {
 }
 
 type Settings struct {
-	Content   io.Reader
 	DBhandler DBHandler
 }
 
 func check(s Settings) error {
 	var aErr error
-
-	if s.Content == nil {
-		aErr = errors.Join(aErr, errors.New("no content"))
-	}
 
 	if s.DBhandler == nil {
 		aErr = errors.Join(aErr, errors.New("no db handler"))
@@ -33,7 +28,6 @@ func check(s Settings) error {
 }
 
 type Parser struct {
-	content   io.Reader
 	dbhandler DBHandler
 }
 
@@ -44,7 +38,6 @@ func New(settings Settings) (*Parser, error) {
 	}
 
 	return &Parser{
-		content:   settings.Content,
 		dbhandler: settings.DBhandler,
 	}, nil
 }
@@ -58,8 +51,8 @@ type sense struct {
 	Glosses []string `json:"glosses"`
 }
 
-func (p *Parser) Parse() error {
-	scn := bufio.NewScanner(p.content)
+func (p *Parser) Parse(content io.Reader) error {
+	scn := bufio.NewScanner(content)
 
 	var (
 		tok token
