@@ -4,9 +4,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/sanjayJ369/LangApp/database"
 	"github.com/sanjayJ369/LangApp/parser"
-	"github.com/sanjayJ369/LangApp/testhelper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -30,15 +28,6 @@ func TestParser(t *testing.T) {
 func validSettings(tb testing.TB) parser.Settings {
 	tb.Helper()
 
-	name := testhelper.GetTempFileLoc()
-
-	handler, err := database.NewBadger(name)
-	require.NoError(tb, err, "creating handler")
-
-	tb.Cleanup(func() {
-		require.NoError(tb, handler.Close(), "closing handler")
-	})
-
 	f, err := os.Open("./testfiles/vocabulary.jsonl")
 	require.NoError(tb, err, "opening vocabulary file")
 
@@ -46,8 +35,37 @@ func validSettings(tb testing.TB) parser.Settings {
 		require.NoError(tb, f.Close(), "closing vocabulary file")
 	})
 
+	var h fakeDBHandler
+	tb.Cleanup(func() {
+		require.NoError(tb, h.Close(), "closing db handler")
+	})
+
 	return parser.Settings{
 		Content:   f,
-		DBhandler: handler,
+		DBhandler: &h,
 	}
+}
+
+type fakeDBHandler struct {
+	meanings [][]string
+}
+
+func (f *fakeDBHandler) Insert(key, val string) error {
+	f.meanings = append(f.meanings, []string{key, val})
+
+	return nil
+}
+
+func (f *fakeDBHandler) Get(key string) (string, error) {
+	for _, v := range f.meanings {
+		if v[0] == key {
+			return v[1], nil
+		}
+	}
+
+	return "", nil
+}
+
+func (f *fakeDBHandler) Close() error {
+	return nil
 }

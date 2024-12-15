@@ -24,7 +24,7 @@ type Word struct {
 	Senses []Senses `json:"senses"`
 }
 
-type dbHandler interface {
+type DBHandler interface {
 	Insert(key, val string) error
 	Get(key string) (string, error)
 	Close() error
@@ -32,12 +32,12 @@ type dbHandler interface {
 
 type Parser struct {
 	content   io.Reader
-	dbhandler dbHandler
+	dbhandler DBHandler
 }
 
 type Settings struct {
 	Content   io.Reader
-	DBhandler dbHandler
+	DBhandler DBHandler
 }
 
 func check(s Settings) error {
@@ -89,7 +89,7 @@ func (p *Parser) Parse() error {
 	return nil
 }
 
-func insertWordContents(p dbHandler, word *Word) error {
+func insertWordContents(p DBHandler, word *Word) error {
 	for _, sense := range word.Senses {
 		if len(sense.Glosses) != 0 {
 			var meaning strings.Builder
@@ -115,7 +115,7 @@ func insertWordContents(p dbHandler, word *Word) error {
 	return nil
 }
 
-func insertTranslations(p dbHandler, translations []Translation) error {
+func insertTranslations(p DBHandler, translations []Translation) error {
 	for _, lang := range translations {
 		if len(lang.Senses) != 0 {
 			err := p.Insert(lang.Word, lang.Senses)
