@@ -12,38 +12,24 @@ import (
 func TestParser(t *testing.T) {
 	t.Parallel()
 
-	settings := validSettings(t)
-
-	p, err := parser.New(settings)
-	require.NoError(t, err, "creating parser")
-
-	require.NoError(t, p.Parse(), "parsing")
-
-	meaning, err := settings.DBhandler.Get("abaiser")
-	require.NoError(t, err, "getting meaning")
-
-	assert.Equal(t, "Ivory black; animal charcoal.,", meaning)
-}
-
-func validSettings(tb testing.TB) parser.Settings {
-	tb.Helper()
-
 	f, err := os.Open("./testfiles/vocabulary.jsonl")
-	require.NoError(tb, err, "opening vocabulary file")
+	require.NoError(t, err, "opening vocabulary file")
 
-	tb.Cleanup(func() {
-		require.NoError(tb, f.Close(), "closing vocabulary file")
+	t.Cleanup(func() {
+		require.NoError(t, f.Close(), "closing vocabulary file")
 	})
 
 	var h fakeDBHandler
-	tb.Cleanup(func() {
-		require.NoError(tb, h.Close(), "closing db handler")
-	})
 
-	return parser.Settings{
+	p, err := parser.New(parser.Settings{
 		Content:   f,
 		DBhandler: &h,
-	}
+	})
+	require.NoError(t, err, "creating parser")
+	
+	require.NoError(t, p.Parse(), "parsing")
+
+	assert.Equal(t, "Ivory black; animal charcoal.,", h.get("abaiser"))
 }
 
 type fakeDBHandler struct {
@@ -56,16 +42,12 @@ func (f *fakeDBHandler) Insert(key, val string) error {
 	return nil
 }
 
-func (f *fakeDBHandler) Get(key string) (string, error) {
+func (f *fakeDBHandler) get(key string) string {
 	for _, v := range f.meanings {
 		if v[0] == key {
-			return v[1], nil
+			return v[1]
 		}
 	}
 
-	return "", nil
-}
-
-func (f *fakeDBHandler) Close() error {
-	return nil
+	return ""
 }

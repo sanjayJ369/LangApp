@@ -9,30 +9,8 @@ import (
 	"strings"
 )
 
-type Translation struct {
-	Senses string `json:"sense"`
-	Word   string `json:"word"`
-}
-
-type Senses struct {
-	Glosses      []string      `json:"glosses"`
-	Transalation []Translation `json:"translations"`
-}
-
-type Word struct {
-	Word   string   `json:"word"`
-	Senses []Senses `json:"senses"`
-}
-
 type DBHandler interface {
 	Insert(key, val string) error
-	Get(key string) (string, error)
-	Close() error
-}
-
-type Parser struct {
-	content   io.Reader
-	dbhandler DBHandler
 }
 
 type Settings struct {
@@ -54,6 +32,11 @@ func check(s Settings) error {
 	return aErr
 }
 
+type Parser struct {
+	content   io.Reader
+	dbhandler DBHandler
+}
+
 func New(settings Settings) (*Parser, error) {
 	err := check(settings)
 	if err != nil {
@@ -66,33 +49,53 @@ func New(settings Settings) (*Parser, error) {
 	}, nil
 }
 
-func (p *Parser) Parse() error {
-	fp := p.content
+type token struct {
+	Word   string  `json:"word"`
+	Senses []sense `json:"senses"`
+}
 
-	scn := bufio.NewScanner(fp)
-	word := &Word{}
-	var err error
+type sense struct {
+	Glosses       []string      `json:"glosses"`
+	Transalations []translation `json:"translations"`
+}
+
+type translation struct {
+	Word  string `json:"word"`
+	Sense string `json:"sense"`
+}
+
+func (p *Parser) Parse() error {
+	scn := bufio.NewScanner(p.content)
+
+	var (
+		tok token
+		err error
+	)
 
 	for scn.Scan() {
 		if len(scn.Bytes()) == 0 {
 			return nil
 		}
-		err = json.Unmarshal(scn.Bytes(), word)
+
+		err = json.Unmarshal(scn.Bytes(), &tok)
 		if err != nil {
-			return fmt.Errorf("unmarshalling json: %w", err)
+			return fmt.Errorf("unmarshalling token: %w", err)
 		}
-		err = insertWordContents(p.dbhandler, word)
+
+		err = insertToken(p.dbhandler, &tok)
 		if err != nil {
-			return fmt.Errorf("inserting word contents: %w", err)
+			return fmt.Errorf("inserting token: %w", err)
 		}
 	}
+
 	return nil
 }
 
-func insertWordContents(p DBHandler, word *Word) error {
-	for _, sense := range word.Senses {
+func insertToken(p DBHandler, tok *token) error {
+	for _, sense := range tok.Senses {
 		if len(sense.Glosses) != 0 {
 			var meaning strings.Builder
+
 			for _, gloss := range sense.Glosses {
 				_, err := meaning.WriteString(gloss + ",")
 				if err != nil {
@@ -100,13 +103,13 @@ func insertWordContents(p DBHandler, word *Word) error {
 				}
 			}
 
-			err := p.Insert(word.Word, meaning.String())
+			err := p.Insert(tok.Word, meaning.String())
 			if err != nil {
 				return fmt.Errorf("inserting meaing values to db: %w", err)
 			}
 		}
 
-		err := insertTranslations(p, sense.Transalation)
+		err := insertTranslations(p, sense.Transalations)
 		if err != nil {
 			return fmt.Errorf("inserting transations: %w", err)
 		}
@@ -115,14 +118,15 @@ func insertWordContents(p DBHandler, word *Word) error {
 	return nil
 }
 
-func insertTranslations(p DBHandler, translations []Translation) error {
+func insertTranslations(p DBHandler, translations []translation) error {
 	for _, lang := range translations {
-		if len(lang.Senses) != 0 {
-			err := p.Insert(lang.Word, lang.Senses)
+		if len(lang.Sense) != 0 {
+			err := p.Insert(lang.Word, lang.Sense)
 			if err != nil {
 				return fmt.Errorf("inserting meaing values to db: %w", err)
 			}
 		}
 	}
+
 	return nil
 }
