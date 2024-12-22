@@ -53,11 +53,14 @@ type sense struct {
 
 func (p *Parser) Parse(content io.Reader) error {
 	scn := bufio.NewScanner(content)
+	maxTokenSize := bufio.MaxScanTokenSize
+	buf := make([]byte, bufio.MaxScanTokenSize)
+	scn.Buffer(buf, maxTokenSize*64)
 
 	var (
-		tok token
+		tok     token
 		meaning strings.Builder
-		err error
+		err     error
 	)
 
 	for scn.Scan() {
@@ -76,12 +79,16 @@ func (p *Parser) Parse(content io.Reader) error {
 		}
 	}
 
+	if err := scn.Err(); err != nil {
+		return fmt.Errorf("scanning token: %w", err)
+	}
+
 	return nil
 }
 
 func insertToken(p DBHandler, tok *token, meaning strings.Builder) error {
 	meaning.Reset()
-	
+
 	for i, sense := range tok.Senses {
 		for j, gloss := range sense.Glosses {
 			_, err := meaning.WriteString(gloss)
