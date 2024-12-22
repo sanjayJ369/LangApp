@@ -1,6 +1,11 @@
 repos:
   - repo: local
     hooks:
+      - id: build
+        name: building project
+        language: system
+        entry: make build
+      
       - id: tests
         name: running tests
         language: system

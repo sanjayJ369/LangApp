@@ -22,10 +22,17 @@ func TestFlashcardsUsage(t *testing.T) {
 		t.Cleanup(func() {
 			require.NoError(t, handler.Close(), "closing sqlite db")
 		})
-		require.NoError(t, err)
+		require.NoError(t, err, "creating db handler")
+		
+		
+		meaningH, err := meaning.New(meaning.Settings{
+			GetMeaning: handler,
+		})
+		require.NoError(t, err, "creating meaning handler")
+
 		settings := flashcard.Settings{
 			Learner:    learner.New(testhelper.GetTempFileLoc()),
-			Meaning:    meaning.New(meaning.Settings{DBHandler: handler}),
+			Meaning:    meaningH,
 			Exporter:   exporter.New(),
 			Lemmatizer: lemmatizer.New(),
 		}

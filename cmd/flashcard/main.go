@@ -29,12 +29,17 @@ func main() {
 		log.Fatalf("opening db: %s", err)
 	}
 	defer dbhandler.Close()
-	meaningSetting := meaning.Settings{
-		DBHandler: dbhandler,
+	
+	meaningH, err := meaning.New(meaning.Settings{
+		GetMeaning: dbhandler,
+	})
+	if err != nil {
+		log.Fatalf("creating mining handler: %s", err)
 	}
+
 	settings := flashcard.Settings{
 		Learner:    learner.New("../../assets/learnerData"),
-		Meaning:    meaning.New(meaningSetting),
+		Meaning:    meaningH,
 		Exporter:   exporter.New(),
 		Lemmatizer: lemmatizer.New(),
 	}
