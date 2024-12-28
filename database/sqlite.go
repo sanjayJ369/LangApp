@@ -2,7 +2,6 @@ package database
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/jmoiron/sqlx"
 	_ "github.com/mattn/go-sqlite3"
@@ -20,23 +19,22 @@ func NewSqlite(dataSouceName string) (*SqliteHandler, error) {
 
 	_, err = db.Exec("PRAGMA journal_mode = WAL;")
 	if err != nil {
-		return nil, fmt.Errorf("setting WAL mode: %s", err)
+		return nil, fmt.Errorf("setting journal mode: %w", err)
 	}
 
-	_, err = db.Exec("PRAGMA wal_autocheckpoint=1000;;")
+	_, err = db.Exec("PRAGMA synchronous = normal;")
 	if err != nil {
-		return nil, fmt.Errorf("setting WAL mode: %s", err)
+		return nil, fmt.Errorf("setting synchronous: %w", err)
 	}
 
-	_, err = db.Exec("PRAGMA timeout = 10000;")
+	_, err = db.Exec("PRAGMA busy_timeout = 3000;")
 	if err != nil {
-		return nil, fmt.Errorf("setting WAL mode: %s", err)
+		return nil, fmt.Errorf("setting busy timeout: %w", err)
 	}
 
 	query := `CREATE TABLE IF NOT EXISTS meaning(
-		word varchar , 
-		meaning varchar ,
-		primary key (word, meaning)
+		word VARCHAR NOT NULL PRIMARY KEY, 
+		meaning VARCHAR NOT NULL
 	);`
 	_, err = db.Exec(query)
 	if err != nil {
@@ -49,49 +47,23 @@ func NewSqlite(dataSouceName string) (*SqliteHandler, error) {
 }
 
 func (h *SqliteHandler) Insert(word, meaning string) error {
-	// retry failed insertes
-	for i := 0; i < 3; i++ {
-		tx, err := h.db.Begin()
-		if err != nil {
-			return fmt.Errorf("creating transcation")
-		}
+	const insQuery = "INSERT OR IGNORE INTO meaning (word, meaning) VALUES (?, ?);"
 
-		insQuery := `INSERT OR IGNORE INTO meaning (word, meaning)
-			VALUES (?, ?) `
-		_, err = tx.Exec(insQuery, word, meaning)
-		if err != nil {
-			tx.Rollback()
-			if err.Error() == "database is locked" {
-				continue
-			}
-			return fmt.Errorf("inserting values: %w", err)
-		}
+	_, err := h.db.Exec(insQuery, word, meaning)
 
-		err = tx.Commit()
-		if err != nil {
-			return fmt.Errorf("commit failed: %w", err)
-		}
-	}
-	return nil
+	return err
 }
 
 func (h *SqliteHandler) Get(word string) (string, error) {
-	getQuery := "SELECT meaning FROM meaning WHERE word=?"
-	rows, err := h.db.Query(getQuery, word)
-	defer rows.Close()
+	const getQuery = "SELECT meaning FROM meaning WHERE word=?;"
+
+	var meaning string
+
+	err := h.db.QueryRow(getQuery, word).Scan(&meaning)
 	if err != nil {
 		return "", fmt.Errorf("getting meaning: %w", err)
 	}
-	senses := make([]string, 0)
-	var meaning string
-	for rows.Next() {
-		err := rows.Scan(&meaning)
-		if err != nil {
-			return "", fmt.Errorf("scanning row: %w", err)
-		}
-		senses = append(senses, meaning)
-	}
-	meaning = strings.Join(senses, ",")
+
 	return meaning, nil
 }
 
