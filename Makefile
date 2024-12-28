@@ -6,3 +6,6 @@ build:
 
 tests:
 	go test ./... -race -count=1 -timeout 30s 
+
+cleanup:
+	go mod tidy

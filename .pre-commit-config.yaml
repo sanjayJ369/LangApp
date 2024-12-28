@@ -1,6 +1,11 @@
 repos:
   - repo: local
     hooks:
+      - id: cleanup
+        name: cleaning dependencies
+        language: system
+        entry: make cleanup
+
       - id: build
         name: building project
         language: system
