@@ -1,6 +1,8 @@
 package database
 
 import (
+	"database/sql"
+	"errors"
 	"fmt"
 
 	"github.com/jmoiron/sqlx"
@@ -47,19 +49,29 @@ func NewSqlite(dataSouceName string) (*SqliteHandler, error) {
 }
 
 func (h *SqliteHandler) Insert(word, meaning string) error {
-	const insQuery = "INSERT INTO meaning (word, meaning) VALUES (?, ?);"
+	storedMeaning, err := h.Get(word)
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		return fmt.Errorf("checking stored meaning: %w", err)
+	}
 
-	_, err := h.db.Exec(insQuery, word, meaning)
+	if meaning != storedMeaning {
+		if storedMeaning != "" {
+			meaning = storedMeaning + "; " + meaning
+		}
+
+		_, err = h.db.Exec("INSERT INTO meaning (word, meaning) VALUES (?, ?);", word, meaning)
+		if err != nil {
+			return fmt.Errorf("inserting meaning: %w", err)
+		}
+	}
 
 	return err
 }
 
 func (h *SqliteHandler) Get(word string) (string, error) {
-	const getQuery = "SELECT meaning FROM meaning WHERE word=?;"
-
 	var meaning string
 
-	err := h.db.QueryRow(getQuery, word).Scan(&meaning)
+	err := h.db.QueryRow("SELECT meaning FROM meaning WHERE word=?;", word).Scan(&meaning)
 	if err != nil {
 		return "", fmt.Errorf("getting meaning: %w", err)
 	}
