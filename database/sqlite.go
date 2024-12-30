@@ -47,7 +47,7 @@ func NewSqlite(dataSouceName string) (*SqliteHandler, error) {
 }
 
 func (h *SqliteHandler) Insert(word, meaning string) error {
-	const insQuery = "INSERT OR IGNORE INTO meaning (word, meaning) VALUES (?, ?);"
+	const insQuery = "INSERT INTO meaning (word, meaning) VALUES (?, ?);"
 
 	_, err := h.db.Exec(insQuery, word, meaning)
 
