@@ -1,4 +1,4 @@
-package flashcards_test
+package feature_test
 
 import (
 	"testing"
@@ -18,7 +18,7 @@ func TestFlashcardsUsage(t *testing.T) {
 
 	t.Run("User creates flashcards", func(t *testing.T) {
 
-		handler, err := database.NewSqlite("./assets/meaning.db")
+		handler, err := database.NewSqlite("./testfiles/meaning.db")
 		t.Cleanup(func() {
 			require.NoError(t, handler.Close(), "closing sqlite db")
 		})

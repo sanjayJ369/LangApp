@@ -2,6 +2,10 @@
     "editor.quickSuggestions": {
         "strings": "on",
     },
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+        "source.organizeImports": "always"
+    },
     "cucumberautocomplete.strictGherkinCompletion": true,
     "cucumberautocomplete.strictGherkinValidation": true,
     "go.testFlags": [
@@ -9,7 +13,7 @@
         "-count=1"
     ],
     "go.testEnvVars": {
-        "CGO_ENABLED":"1"
+        "CGO_ENABLED": "1"
     },
     "makefile.configureOnOpen": false
 }
