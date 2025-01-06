@@ -1,2 +1,6 @@
+# settings
+.env
+
+# generated
 assets/
 cards.txt
