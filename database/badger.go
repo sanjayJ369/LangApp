@@ -11,7 +11,10 @@ type BadgerHandler struct {
 }
 
 func NewBadger(dataSourceName string) (*BadgerHandler, error) {
-	db, err := badger.Open(badger.DefaultOptions(dataSourceName))
+	db, err := badger.Open(
+		badger.DefaultOptions(dataSourceName).
+			WithLoggingLevel(badger.WARNING),
+	)
 	if err != nil {
 		return nil, fmt.Errorf("opening db: %w", err)
 	}
